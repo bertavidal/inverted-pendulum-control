@@ -312,6 +312,20 @@ pre code {
   color: #333;
 }
 
+/* Estil per a les citacions in-document (elevades i petites) */
+a[href^="#bib"] {
+    vertical-align: super;
+    font-size: 7pt;        /* Més petita que el text de 9pt */
+    text-decoration: none;
+    font-weight: bold;
+    margin-left: 1px;
+}
+
+/* Opcional: canviar el color perquè sembli una citació clàssica */
+a[href^="#bib"]:hover {
+    text-decoration: underline;
+    color: #0056b3;
+}
 /* Millores per a impressió/PDF */
 @media print {
   body {
@@ -374,6 +388,9 @@ pre code {
 
 - [0. Índex](#0-índex)
 - [1. Introducció](#1-introducció)
+  - [1.1 Motivació](#11-motivació)
+  - [1.2 Enunciat](#12-enunciat)
+  - [1.3 Metodologia](#13-metodologia)
 - [2. Model del pèndol](#2-model-del-pèndol)
   - [2.1 Equacions del moviment](#21-equacions-del-moviment)
   - [2.2 Model no lineal](#22-model-no-lineal)
@@ -392,9 +409,27 @@ pre code {
 - [8. Conclusions](#8-conclusions)
 - [9. Referències](#9-referències)
 
+<div class="page-break"></div>
+
 ## 1. Introducció
 
-introducció (motivació metodologia...)
+Aquest projecte té com a propòsit principal la representació, l'anàlisi i el disseny de sistemes dinàmics. L'objectiu és interioritzar conceptes clau d'aquesta disciplina, com ara l'estabilitat, l'observabilitat i la controlabilitat, i aplicar-los al disseny pràctic de controladors capaços de governar fenòmens físics que evolucionen en el temps dins d'un entorn real.
+
+### 1.1 Motivació
+
+La principal raó per desenvolupar aquest treball és que el pèndol invertit actua com un banc de proves ideal per aprendre i validar diverses metodologies de control. En concret, ens permet explorar des del control clàssic PID (Proporcional-Integral-Derivatiu) fins a tècniques d'estat modernes com el Regulador Quadràtic Lineal (LQR), el filtre de Kalman i el Regulador Quadràtic Lineal Gaussià (LQG). Dominar aquestes eines és un pas fonamental per poder dissenyar sistemes de control robustos en l'enginyeria.
+
+### 1.2 Enunciat
+
+Per a la realització de la pràctica, partim de dos documents principals. D'una banda, un treball de referència enfocat en la física i control del pèndol invertit[[1]](#bib1). I, de l'altra, un segon projecte implementat en Simulink que ens serveix de pauta metodològica: Design of a Linear Quadratic Gaussian Control System for a Thrust Vector Controlled Rocket[[2]](#bib2)
+La tasca central consisteix a replicar l'estructura i el mètode d'aquest darrer treball, però aplicant-ho sobre el sistema del pèndol invertit. A més a més, s'hauran de desenvolupar dos casos propis d'estudi (modificacions lliures) on es treballi sobre dues referències diferents: la posició del carro i l'angle del pèndol.
+Caldrà entregar una memòria que inclogui els objectius, el modelat, el treball realitzat i les conclusions, acompanyada d'un resum de 5 diapositives de presentació i la totalitat del codi (MATLAB/Simulink) generat. La qualificació es fonamentarà en la fidelitat amb què s'imiti l'enfocament del treball de referència, la solidesa de les dues extensions proposades i la qualitat del lliurament de les diapositives.
+
+### 1.3 Metodologia
+
+A partir de les equacions de moviment del sistema físic, el primer pas serà derivar un model continu i lineal en l'espai d'estats. Aprofitant el coneixement previ de la dinàmica del pèndol, es definiran les matrius $A, B, C, D$ que descriuen el seu comportament prop de l'equilibri.
+Un cop establert aquest espai d'estats, es procedirà a implementar diverses estratègies de control per observar-ne els efectes sobre l'estabilitat i l'angle. Inicialment, dins del marc del control clàssic, es dissenyarà un controlador PID per corregir les pertorbacions angulars; atesa la inestabilitat inherent de la planta, caldrà sintonitzar de manera acurada els guanys proporcional, integral i derivatiu per forçar la posició vertical desitjada.
+En la següent fase, s'emprarà MATLAB i Simulink per dissenyar un regulador LQR, definint les matrius de ponderació $Q$ i $R$ de la funció de cost per tal d'assolir uns guanys de realimentació òptims. Com que s'haurà comprovat que el sistema és completament controlable i observable, també s'implementarà un filtre de Kalman encarregat d'estimar l'estat intern del pèndol invertit basant-se únicament en els senyals de sortida. Finalment, gràcies al principi de separació, el filtre de Kalman i el LQR s'integraran per conformar un controlador LQG, aconseguint així una resposta dinàmica global òptima.
 
 <div class="page-break"></div>
 
@@ -568,13 +603,16 @@ Primer de tot, definim la nomenclatura i les unitats que s’utilitzaran al llar
   <div class="table-caption">Taula 1. Nomenclatura i unitats utilitzades en el model dinàmic del pèndol invertit sobre carro.</div>
 </div>
 
-<div class="page-break"></div>
-
-<div class="page-break"></div>
-
 ### 2.1 Equacions del moviment
 
-El sistema que es vol controlar és un pèndol invertit muntat sobre un carro que es desplaça lliurement en la direcció horitzontal. L’objectiu és aplicar una força $F$ sobre el carro per mantenir el pèndol en la posició vertical cap amunt, que constitueix un punt d’equilibri inestable. El sistema té dos graus de llibertat: la posició horitzontal del carro, $x$, i l’angle del pèndol respecte de la vertical, $\theta$.
+El sistema que es vol controlar és un pèndol invertit muntat sobre un carro que es desplaça lliurement en la direcció horitzontal. L’objectiu és aplicar una força $F$ sobre el carro per mantenir el pèndol en la posició vertical cap amunt, que constitueix un punt d’equilibri inestable. El sistema té dos graus de llibertat: la posició horitzontal del carro, $x$, i l’angle del pèndol respecte de la vertical, $\theta$:
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/pendol.png" alt="Diagrama del pèndol invertit sobre carro">
+    <div class="caption">Figura 1: Diagrama esquemàtic del pèndol invertit sobre carro </div>
+  </div>
+</div>
 
 Els paràmetres físics del model són $M_c$, la massa del carro; $m$, la massa del pèndol; $l$, la distància des del pivot fins al centre de gravetat; $I$, el moment d’inèrcia del pèndol respecte del pivot; $c$, el coeficient de fricció viscosa del carro; $b$, el coeficient d’amortiment viscós al pivot; i $g$, l’acceleració de la gravetat.
 
@@ -588,7 +626,7 @@ $$
     =
     \begin{bmatrix}
     x + l\sin\theta \\\\
-    l\cos\theta
+    - l\cos\theta
     \end{bmatrix}
 $$
 
@@ -611,7 +649,7 @@ on $T$ és l’energia cinètica total i $U$ és l’energia potencial.
 En aquest model, l’energia potencial només depèn del pèndol i queda escrita com:
 
 $$
-    U = mgl\cos\theta
+    U = - mgl\cos\theta
 $$
 
 L’energia cinètica total és la suma de la contribució del carro i la del pèndol. La del carro és:
@@ -648,16 +686,8 @@ $$
 
 Per tant, el Lagrangià complet queda:
 
-$$
-    \mathcal{L}
-    =
-    \frac{1}{2}(M_c + m)\dot{x}^2
-    +
-    \frac{1}{2}(I + ml^2)\dot{\theta}^2
-    +
-    ml\dot{x}\dot{\theta}\cos\theta
-    -
-    mgl\cos\theta
+$$ 
+\mathcal{L} = \frac{1}{2} (M_c + m)\dot{x}^2 + \frac{1}{2} (I + ml^2)\dot{\theta}^2 + ml\dot{x}\dot{\theta} \cos\theta + mgl \cos\theta 
 $$
 
 Com que el sistema té dues coordenades generalitzades, $x$ i $\theta$, cal aplicar dues equacions d’Euler-Lagrange. La força generalitzada associada a $x$ és $F - c\dot{x}$, mentre que la força generalitzada associada a $\theta$ és $-b\dot{\theta}$. Així, les equacions corresponents són:
@@ -680,24 +710,11 @@ $$
 
 Després de calcular les derivades parcials i simplificar, s’obtenen les equacions del moviment no lineals del sistema:
 
+$$ 
+  (M_c + m)\ddot{x} + ml\ddot{\theta} \cos\theta - ml\dot{\theta}^2 \sin\theta = F - c\dot{x} 
 $$
-    (M_c + m)\ddot{x}
-    +
-    ml\ddot{\theta}\cos\theta
-    -
-    ml\dot{\theta}^2\sin\theta
-    =
-    F - c\dot{x}
-$$
-
-$$
-    (I + ml^2)\ddot{\theta}
-    +
-    ml\ddot{x}\cos\theta
-    -
-    mgl\sin\theta
-    =
-    -b\dot{\theta}
+$$ 
+  (I + ml^2)\ddot{\theta} + ml\ddot{x} \cos\theta + mgl \sin\theta = -b\dot{\theta} 
 $$
 
 Aquestes són les equacions bàsiques que descriuen la dinàmica del pèndol invertit sobre carro. En aquesta forma encara no són adequades per al disseny del controlador, perquè les dues acceleracions apareixen acoblades i el model és no lineal.
@@ -777,31 +794,12 @@ $$
 on les funcions $f_3$ i $f_4$ són, respectivament, les expressions de $\ddot{x}$ i $\ddot{\theta}$ obtingudes abans. Si s’escriuen explícitament en funció dels estats $x_1$, $x_2$, $x_3$ i $x_4$, s’obté:
 
 $$
-    \dot{\mathbf{x}}
-    =
+    \dot{\mathbf{x}} =
     \begin{bmatrix}
     x_3 \\\\
     x_4 \\\\
-    \dfrac{
-    bmlx_4\cos x_2
-    +
-    m^2l^2g\sin x_2 \cos x_2
-    +
-    (I + ml^2)\bigl(u - cx_3 + mlx_4^2\sin x_2\bigr)
-    }{
-    I(M_c + m) + M_cml^2 + m^2l^2\sin^2 x_2
-    } \\\\
-    \dfrac{
-    -mlu\cos x_2
-    +
-    cmlx_3\cos x_2
-    -
-    m^2l^2x_4^2\sin x_2 \cos x_2
-    +
-    (M_c + m)\bigl(mgl\sin x_2 - bx_4\bigr)
-    }{
-    I(M_c + m) + M_cml^2 + m^2l^2\sin^2 x_2
-    }
+    \frac{(I + ml^2)(u - cx_3 + mlx_4^2 \sin x_2) + ml \cos x_2 (mgl \sin x_2 + bx_4)}{I(M_c + m) + M_cml^2 + m^2l^2 \sin^2 x_2} \\\\
+    \frac{-(M_c + m)(mgl \sin x_2 + bx_4) - ml \cos x_2 (u - cx_3 + mlx_4^2 \sin x_2)}{I(M_c + m) + M_cml^2 + m^2l^2 \sin^2 x_2}
     \end{bmatrix}
 $$
 
@@ -813,72 +811,35 @@ Les equacions del moviment no lineals obtingudes anteriorment descriuen correcta
 
 Partim de les equacions del moviment:
 
+$$ 
+  (M_c + m)\ddot{x} + ml\ddot{\theta}\cos\theta - ml\dot{\theta}^2\sin\theta = F - c\dot{x} 
 $$
-    (M + m)\ddot{x} + ml\ddot{\theta}\cos\theta - ml\dot{\theta}^2\sin\theta = F - c\dot{x}
-$$
-
-$$
-    (I + ml^2)\ddot{\theta} + ml\ddot{x}\cos\theta + mgl\sin\theta = -b\dot{\theta}
+$$ 
+  (I + ml^2)\ddot{\theta} + ml\ddot{x}\cos\theta + mgl\sin\theta = -b\dot{\theta} 
 $$
 
 Per obtenir una representació en espai d’estats, primer cal aïllar les acceleracions $\ddot{x}$ i $\ddot{\theta}$. Si es pren $\ddot{x}$ de la segona equació, s’obté:
 
-$$
-    \ddot{x}
-    =
-    \frac{
-    -b\dot{\theta} - mgl\sin\theta - (I + ml^2)\ddot{\theta}
-    }{
-    ml\cos\theta
-    }
+$$ 
+  \ddot{x} = \frac{-b\dot{\theta} - mgl\sin\theta - (I + ml^2)\ddot{\theta}}{ml\cos\theta} 
 $$
 
 Substituint aquesta expressió a la primera equació, es pot obtenir $\ddot{\theta}$ en funció dels estats i de l’entrada. El resultat és:
 
-$$
-    \ddot{\theta}
-    =
-    \frac{
-    -\left(
-    Fml\cos\theta
-    -
-    cml\dot{x}\cos\theta
-    +
-    m^2l^2\dot{\theta}^2\sin\theta\cos\theta
-    +
-    (M + m)(b\dot{\theta} + mgl\sin\theta)
-    \right)
-    }{
-    m^2l^2\sin^2\theta + Mml^2 + (M + m)I
-    }
+$$ 
+  \ddot{\theta} = \frac{-\left( (M_c + m)(b\dot{\theta} + mgl\sin\theta) + ml\cos\theta(F - c\dot{x} + ml\dot{\theta}^2\sin\theta) \right)}{m^2l^2\sin^2\theta + M_cml^2 + (M_c + m)I} 
 $$
 
 De manera similar, si aïllem ara $\ddot{\theta}$ de la primera equació, resulta:
 
-$$
-    \ddot{\theta}
-    =
-    \frac{
-    F - c\dot{x} - (M + m)\ddot{x} + ml\dot{\theta}^2\sin\theta
-    }{
-    ml\cos\theta
-    }
+$$ 
+  \ddot{\theta} = \frac{F - c\dot{x} - (M_c + m)\ddot{x} + ml\dot{\theta}^2\sin\theta}{ml\cos\theta} 
 $$
 
 Substituint aquesta expressió a la segona equació, s’arriba a la forma explícita de $\ddot{x}$: 
 
-$$
-    \ddot{x}
-    =
-    \frac{
-    bml\dot{\theta}\cos\theta
-    +
-    m^2l^2g\sin\theta\cos\theta
-    +
-    (I + ml^2)\left(F - c\dot{x} + ml\dot{\theta}^2\sin\theta\right)
-    }{
-    m^2l^2\sin^2\theta + Mml^2 + (M + m)I
-    }
+$$ 
+  \ddot{x} = \frac{bml\dot{\theta}\cos\theta + m^2l^2g\sin\theta\cos\theta + (I + ml^2)(F - c\dot{x} + ml\dot{\theta}^2\sin\theta)}{m^2l^2\sin^2\theta + M_cml^2 + (M_c + m)I} 
 $$
 
 Un cop aïllades les acceleracions, es defineixen les variables d’estat habituals del sistema:
@@ -938,39 +899,11 @@ $$
     x_4
     \end{bmatrix}
     =
-    \frac{d}{dt}
-    \begin{bmatrix}
-    x \\\\
-    \theta \\\\
-    \dot{x} \\\\
-    \dot{\theta}
-    \end{bmatrix}
-    =
     \begin{bmatrix}
     x_3 \\\\
     x_4 \\\\
-    \dfrac{
-    bmlx_4\cos x_2
-    +
-    m^2l^2g\sin x_2\cos x_2
-    +
-    (I + ml^2)\left(F - cx_3 + mlx_4^2\sin x_2\right)
-    }{
-    Mml^2 + (M + m)I + m^2l^2\sin^2 x_2
-    } \\\\
-    \dfrac{
-    -\left(
-    Fml\cos x_2
-    -
-    cmlx_3\cos x_2
-    +
-    m^2l^2x_4^2\sin x_2\cos x_2
-    +
-    (M + m)(bx_4 + mgl\sin x_2)
-    \right)
-    }{
-    Mml^2 + (M + m)I + m^2l^2\sin^2 x_2
-    }
+    \frac{bmlx_4 \cos x_2 + m^2l^2g \sin x_2 \cos x_2 + (I + ml^2)(F - cx_3 + mlx_4^2 \sin x_2)}{Mml^2 + (M + m)I + m^2l^2 \sin^2 x_2} \\\\
+    \frac{-(M + m)(mgl \sin x_2 + bx_4) - ml \cos x_2 (F - cx_3 + mlx_4^2 \sin x_2)}{Mml^2 + (M + m)I + m^2l^2 \sin^2 x_2}
     \end{bmatrix}
 $$
 
@@ -998,33 +931,12 @@ $$
 Si es vol obtenir un model lineal local al voltant del punt estacionari vertical, cal linealitzar aquest sistema no lineal. Definim el camp vectorial com:
 
 $$
-    f(X,U)
-    =
+    f(X,U) =
     \begin{bmatrix}
     x_3 \\\\
     x_4 \\\\
-    \dfrac{
-    bmlx_4\cos x_2
-    +
-    m^2l^2g\sin x_2\cos x_2
-    +
-    (I + ml^2)\left(F - cx_3 + mlx_4^2\sin x_2\right)
-    }{
-    Mml^2 + (M + m)I + m^2l^2\sin^2 x_2
-    } \\\\
-    \dfrac{
-    -\left(
-    Fml\cos x_2
-    -
-    cmlx_3\cos x_2
-    +
-    m^2l^2x_4^2\sin x_2\cos x_2
-    +
-    (M + m)(bx_4 + mgl\sin x_2)
-    \right)
-    }{
-    Mml^2 + (M + m)I + m^2l^2\sin^2 x_2
-    }
+    \frac{bmlx_4 \cos x_2 + m^2l^2g \sin x_2 \cos x_2 + (I + ml^2)(F - cx_3 + mlx_4^2 \sin x_2)}{Mml^2 + (M + m)I + m^2l^2 \sin^2 x_2} \\\\
+    \frac{-(M + m)(mgl \sin x_2 + bx_4) - ml \cos x_2 (F - cx_3 + mlx_4^2 \sin x_2)}{Mml^2 + (M + m)I + m^2l^2 \sin^2 x_2}
     \end{bmatrix}
 $$
 
@@ -1419,7 +1331,7 @@ En essència, el senyal d’error es multiplica per una acció proporcional, s�
     </thead>
     <tbody>
       <tr>
-        <td>Augment de $K_P$</td>
+        <td>Augment de <math><msub><mi>k</mi><mi>p</mi></msub></math></td>
         <td>Disminueix</td>
         <td>Augmenta</td>
         <td>Petit augment</td>
@@ -1427,7 +1339,7 @@ En essència, el senyal d’error es multiplica per una acció proporcional, s�
         <td>Es degrada</td>
       </tr>
       <tr>
-        <td>Augment de $K_I$</td>
+        <td>Augment de <math><msub><mi>k</mi><mi>i</mi></msub></math></td>
         <td>Petita disminució</td>
         <td>Augmenta</td>
         <td>Augmenta</td>
@@ -1435,7 +1347,7 @@ En essència, el senyal d’error es multiplica per una acció proporcional, s�
         <td>Es degrada</td>
       </tr>
       <tr>
-        <td>Augment de $K_D$</td>
+        <td>Augment de <math><msub><mi>k</mi><mi>d</mi></msub></math></td>
         <td>Petita disminució</td>
         <td>Disminueix</td>
         <td>Disminueix</td>
@@ -1448,6 +1360,101 @@ En essència, el senyal d’error es multiplica per una acció proporcional, s�
 </div>
 
 ### 3.3 Implementació del controlador PID al pèndol invertit amb Simulink
+
+Afegim inicialment un controlador PID al model linealitzatamb l’objectiu de visualitzar l’estructura bàsica del llaç de control i disposar d’un primer esquema de treball abans de passar al tractament del model no linealitzat. Aquest model linealitzat amb el controlador PID associat a l’angle del pèndol es mostra a continuació:
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/model_pid_lineal.png" alt="Model linealitzat en Simulink amb controlador PID" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Model linealitzat en Simulink amb controlador PID associat a l’angle del pèndol.</div>
+  </div>
+</div>
+
+Després implementem el model en Simulink mitjançant una arquitectura en llaç tancat on el bloc del pèndol invertit representa la planta i proporciona com a sortides els estats $x$, $\theta$, $\dot{x}$ i $\dot{\theta}$, dels quals escollim la posició del carro i l’angle del pèndol per construir el senyal d’error respecte de l’estat desitjat; aquest error s’introdueix en dos controladors PID, un associat a la posició i l’altre a l’angle, i les seves sortides es combinen per generar la comanda de control. Els valors dels guanys $K_P$, $K_I$ i $K_D$ s’han ajustat mitjançant, l'ajustador automàtic de PID de Simulink i després retocat manualment per obtenir una resposta més ràpida i amb menys sobreimpuls.  La implementació del model no linealitzat amb els controladors PID associats a la posició i a l’angle del pèndol es mostra a continuació:
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/model_pid.png" alt="Model en Simulink amb controlador PID" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Model en Simulink amb controladors PID.</div>
+  </div>
+</div>
+
+Pel PID associat a l'angle del pèndol, s’han seleccionat els guanys:
+
+<div class="table-container">
+  <div class="table-title">Guanys PID obtinguts per al control de l’angle</div>
+  <table style="width: 260px; table-layout: fixed;">
+    <colgroup>
+      <col style="width: 90px;">
+      <col style="width: 170px;">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Paràmetre</th>
+        <th>Valor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><math><msub><mi>k</mi><mi>p</mi></msub></math></td>
+        <td>62.5903</td>
+      </tr>
+      <tr>
+        <td><math><msub><mi>k</mi><mi>i</mi></msub></math></td>
+        <td>63.8958</td>
+      </tr>
+      <tr>
+        <td><math><msub><mi>k</mi><mi>d</mi></msub></math></td>
+        <td>0</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="table-caption">Taula X: Valors dels guanys del controlador PID ajustat per al control de l’angle del pèndol.</div>
+</div>
+
+Per al PID associat a la posició del carro, s’han seleccionat els guanys:
+
+<div class="table-container">
+  <div class="table-title">Guanys PID obtinguts per al control de la posició</div>
+  <table style="width: 260px; table-layout: fixed;">
+    <colgroup>
+      <col style="width: 90px;">
+      <col style="width: 170px;">
+    </colgroup>
+    <thead>
+      <tr>
+        <th>Paràmetre</th>
+        <th>Valor</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><math><msub><mi>k</mi><mi>p</mi></msub></math></td>
+        <td>-1.573</td>
+      </tr>
+      <tr>
+        <td><math><msub><mi>k</mi><mi>i</mi></msub></math></td>
+        <td>-0.022984</td>
+      </tr>
+      <tr>
+        <td><math><msub><mi>k</mi><mi>d</mi></msub></math></td>
+        <td>-2.1018</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="table-caption">Taula X: Valors dels guanys del controlador PID ajustat per al control de la posició horitzontal del carro.</div>
+</div>
+
+I, partint de $\theta = \pi - (\pi * 0.1)$ com a condició inicial per a l’angle del pèndol i $x = 0.2$ com a condició inicial per a la posició del carro, s’obté la següent resposta:
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/resultats_pid.png" alt="Resposta del sistema amb controlador PID" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Resposta del sistema amb controlador PID.</div>
+  </div>
+</div>
+
+En aquest cas, i a diferència de la resposta en llaç obert, el sistema és capaç d’estabilitzar-se al voltant del punt d’equilibri vertical. Tot i que es poden observar algunes oscil·lacions inicials, aquestes s’amortitzen ràpidament i el sistema aconsegueix una posició estable amb un error molt petit respecte de la posició desitjada.
 
 ## 4. Controlador LQR
 
@@ -1475,4 +1482,10 @@ implementaico de tot junt: controlador LQR + filtre de Kalman i executar i veure
 
 ## 8. Conclusions
 
+<div class="page-break"></div>
+
 ## 9. Referències
+
+<a name="bib1"></a> [1]: Singh, J. *A Short Notes on Inverted Pendulum: Model Based Control Design for Swing-up & Balance the Inverted Pendulum*. Sardar Vallabhbhai National Institute of Technology (SVNIT) i Indian Institute of Technology (IIT) Jodhpur. Disponible a: [Google Drive](https://drive.google.com/file/d/1W2v3wKXBVW4FohB33kTv8iBEiOFgoS8d/view)
+
+<a name="bib2"></a> [2]: Ganbold, A. (2023). *Design of a Linear Quadratic Gaussian Control System for a Thrust Vector Controlled Rocket*. San Jose State University (SJSU). Disponible a: [SJSU AE Docs](https://www.sjsu.edu/ae/docs/project-thesis/Alex.Ganbold-Su23.pdf)

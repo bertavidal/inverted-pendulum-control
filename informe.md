@@ -1,11 +1,3 @@
-<script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-<script type="text/x-mathjax-config">
-  MathJax.Hub.Config({
-    tex2jax: { inlineMath: [['$', '$']] },
-    messageStyle: "none"
-  });
-</script>
-
 <style>
 /* Estils globals del document */
 body {
@@ -422,152 +414,152 @@ Primer de tot, definim la nomenclatura i les unitats que s’utilitzaran al llar
     </thead>
     <tbody>
       <tr>
-        <td>$x$</td>
+        <td><math><mi>x</mi></math></td>
         <td>Posició horitzontal del carro</td>
         <td>m</td>
       </tr>
       <tr>
-        <td>$\theta$</td>
+        <td><math><mi>θ</mi></math></td>
         <td>Angle del pèndol respecte de la vertical, positiu en sentit antihorari</td>
         <td>rad</td>
       </tr>
       <tr>
-        <td>$\dot{x}$</td>
+        <td><math><mover><mi>x</mi><mo>˙</mo></mover></math></td>
         <td>Velocitat horitzontal del carro</td>
         <td>m/s</td>
       </tr>
       <tr>
-        <td>$\dot{\theta}$</td>
+        <td><math><mover><mi>θ</mi><mo>˙</mo></mover></math></td>
         <td>Velocitat angular del pèndol</td>
         <td>rad/s</td>
       </tr>
       <tr>
-        <td>$\ddot{x}$</td>
+        <td><math><mover><mi>x</mi><mo>¨</mo></mover></math></td>
         <td>Acceleració horitzontal del carro</td>
-        <td>m/s$^2$</td>
+        <td>m/s<sup>2</sup></td>
       </tr>
       <tr>
-        <td>$\ddot{\theta}$</td>
+        <td><math><mover><mi>θ</mi><mo>¨</mo></mover></math></td>
         <td>Acceleració angular del pèndol</td>
-        <td>rad/s$^2$</td>
+        <td>rad/s<sup>2</sup></td>
       </tr>
       <tr>
-        <td>$x_p$</td>
+        <td><math><msub><mi>x</mi><mi>p</mi></msub></math></td>
         <td>Coordenada horitzontal del centre de gravetat del pèndol</td>
         <td>m</td>
       </tr>
       <tr>
-        <td>$y_p$</td>
+        <td><math><msub><mi>y</mi><mi>p</mi></msub></math></td>
         <td>Coordenada vertical del centre de gravetat del pèndol</td>
         <td>m</td>
       </tr>
       <tr>
-        <td>$M_c$</td>
+        <td><math><msub><mi>M</mi><mi>c</mi></msub></math></td>
         <td>Massa del carro</td>
         <td>kg</td>
       </tr>
       <tr>
-        <td>$m$</td>
+        <td><math><mi>m</mi></math></td>
         <td>Massa del pèndol, concentrada al centre de gravetat</td>
         <td>kg</td>
       </tr>
       <tr>
-        <td>$l$</td>
+        <td><math><mi>l</mi></math></td>
         <td>Distància des del pivot fins al centre de gravetat del pèndol</td>
         <td>m</td>
       </tr>
       <tr>
-        <td>$I$</td>
+        <td><math><mi>I</mi></math></td>
         <td>Moment d’inèrcia del pèndol respecte del pivot</td>
-        <td>kg·m$^2$</td>
+        <td>kg·m<sup>2</sup></td>
       </tr>
       <tr>
-        <td>$c$</td>
+        <td><math><mi>c</mi></math></td>
         <td>Coeficient de fricció viscosa del carro</td>
         <td>N·s/m</td>
       </tr>
       <tr>
-        <td>$b$</td>
+        <td><math><mi>b</mi></math></td>
         <td>Coeficient d’amortiment viscós al pivot</td>
         <td>N·m·s/rad</td>
       </tr>
       <tr>
-        <td>$g$</td>
+        <td><math><mi>g</mi></math></td>
         <td>Acceleració de la gravetat</td>
-        <td>m/s$^2$</td>
+        <td>m/s<sup>2</sup></td>
       </tr>
       <tr>
-        <td>$F$</td>
+        <td><math><mi>F</mi></math></td>
         <td>Força de control aplicada al carro</td>
         <td>N</td>
       </tr>
       <tr>
-        <td>$u$</td>
-        <td>Entrada de control, definida com $u=F$</td>
+        <td><math><mi>u</mi></math></td>
+        <td>Entrada de control, definida com <math><mi>u</mi><mo>=</mo><mi>F</mi></math></td>
         <td>N</td>
       </tr>
       <tr>
-        <td>$T$</td>
+        <td><math><mi>T</mi></math></td>
         <td>Energia cinètica total del sistema</td>
         <td>J</td>
       </tr>
       <tr>
-        <td>$U$</td>
+        <td><math><mi>U</mi></math></td>
         <td>Energia potencial del sistema</td>
         <td>J</td>
       </tr>
       <tr>
-        <td>$\mathcal{L}$</td>
-        <td>Lagrangià del sistema, definit com $\mathcal{L}=T-U$</td>
+        <td><math><mi mathvariant="script">L</mi></math></td>
+        <td>Lagrangià del sistema, definit com <math><mi mathvariant="script">L</mi><mo>=</mo><mi>T</mi><mo>-</mo><mi>U</mi></math></td>
         <td>J</td>
       </tr>
       <tr>
-        <td>$\Delta$</td>
+        <td><math><mi>Δ</mi></math></td>
         <td>Denominador comú de les expressions no lineals de les acceleracions</td>
-        <td>kg$^2$·m$^2$</td>
+        <td>kg<sup>2</sup>·m<sup>2</sup></td>
       </tr>
       <tr>
-        <td>$\alpha$</td>
-        <td>Valor de $\Delta$ al punt d’equilibri de linealització</td>
-        <td>kg$^2$·m$^2$</td>
+        <td><math><mi>α</mi></math></td>
+        <td>Valor de <math><mi>Δ</mi></math> al punt d’equilibri de linealització</td>
+        <td>kg<sup>2</sup>·m<sup>2</sup></td>
       </tr>
       <tr>
-        <td>$\mathbf{x}$</td>
+        <td><math><mi mathvariant="bold">x</mi></math></td>
         <td>Vector d’estat del sistema</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>$\mathbf{y}$</td>
+        <td><math><mi mathvariant="bold">y</mi></math></td>
         <td>Vector de sortida del sistema</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>$A$</td>
+        <td><math><mi>A</mi></math></td>
         <td>Matriu d’estat del model linealitzat</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>$B$</td>
+        <td><math><mi>B</mi></math></td>
         <td>Matriu d’entrada del model linealitzat</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>$C$</td>
+        <td><math><mi>C</mi></math></td>
         <td>Matriu de sortida</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>$D$</td>
+        <td><math><mi>D</mi></math></td>
         <td>Matriu de transmissió directa</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>$\mathcal{C}$</td>
+        <td><math><mi mathvariant="script">C</mi></math></td>
         <td>Matriu de controlabilitat</td>
         <td>-</td>
       </tr>
       <tr>
-        <td>$\mathcal{O}$</td>
+        <td><math><mi mathvariant="script">O</mi></math></td>
         <td>Matriu d’observabilitat</td>
         <td>-</td>
       </tr>
@@ -575,6 +567,8 @@ Primer de tot, definim la nomenclatura i les unitats que s’utilitzaran al llar
   </table>
   <div class="table-caption">Taula 1. Nomenclatura i unitats utilitzades en el model dinàmic del pèndol invertit sobre carro.</div>
 </div>
+
+<div class="page-break"></div>
 
 <div class="page-break"></div>
 

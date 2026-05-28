@@ -1458,12 +1458,6 @@ En aquest cas, i a diferència de la resposta en llaç obert, el sistema és cap
 
 ## 4. Controlador LQR
 
-explicació breu del que és un controlador LQR
-simulació del sistema amb un controlador LQR
-mostrar els resultats obtinguts i comentar-los breument
-
-comparar amb pid
-
 ## 5. Filtre de Kalman
 
 explicar que es el filtre de kalman i com l'apliquem al pèndol.

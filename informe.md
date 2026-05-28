@@ -401,10 +401,12 @@ a[href^="#bib"]:hover {
   - [3.2 Ús del PID i efecte dels guanys](#32-ús-del-pid-i-efecte-dels-guanys)
   - [3.3 Implementació del controlador PID al pèndol invertit amb Simulink](#33-implementació-del-controlador-pid-al-pèndol-invertit-amb-simulink)
 - [4. Controlador LQR](#4-controlador-lqr)
+  - [4.1 Introducció al control òptim](#41-introducció-al-control-òptim)
+  - [4.2 Simulació del sistema no linealitzat amb el controlador LQR en Simulink](#42-simulació-del-sistema-no-linealitzat-amb-el-controlador-lqr-en-simulink)
 - [5. Filtre de Kalman](#5-filtre-de-kalman)
 - [6. Controlador LQG](#6-controlador-lqg)
 - [7. Extensions](#7-extensions)
-  - [7.1 Primera extensió](#71-primera-extensió)
+  - [7.1 Primera extensió: LQI](#71-primera-extensió-lqi)
   - [7.2 Segona extensió](#72-segona-extensió)
 - [8. Conclusions](#8-conclusions)
 - [9. Referències](#9-referències)
@@ -1293,7 +1295,7 @@ Un dels mètodes de control en bucle tancat més importants i encara avui plenam
 L’error es defineix com:
 
 $$
-  e(t)=r-y
+   e(t)=r-y
 $$
 
 on $r$ és el senyal de referència i $y$ és el senyal de sortida. 
@@ -1312,13 +1314,13 @@ Aquest senyal d’error entra al controlador, on és processat mitjançant les a
 La funció de transferència d’un controlador PID en el domini de Laplace es pot escriure com:
 
 $$
-  G(s)=K_P+\frac{K_I}{s}+K_D s
+    G(s)=K_P+\frac{K_I}{s}+K_D s
 $$
 
 En el domini temporal, l’expressió corresponent és:
 
 $$
-  u(t)=K_P e(t)+K_I \int e(t)\,dt+K_D \frac{de(t)}{dt}
+    u(t)=K_P e(t)+K_I \int e(t)\,dt+K_D \frac{de(t)}{dt}
 $$
 
 En essència, el senyal d’error es multiplica per una acció proporcional, s’integra i també es deriva per generar un nou senyal d’entrada capaç de produir la resposta desitjada.  Per aconseguir una resposta òptima davant d’una entrada o d’una pertorbació, és necessari ajustar adequadament els guanys de cadascun d’aquests tres termes. Hi ha diferents mètodes per fer aquest ajust, però abans és important entendre quin efecte té cada guany sobre la resposta del sistema. Podem veure la següent taula, que resumeix l’efecte de cada guany sobre la resposta del sistema:
@@ -1465,6 +1467,8 @@ En aquest cas, i a diferència de la resposta en llaç obert, el sistema és cap
 
 ## 4. Controlador LQR
 
+### 4.1 Introducció al control òptim
+
 Un controlador LQR és un regulador òptim per a sistemes lineals en espai d’estats que calcula automàticament el guany de realimentació $K$ per estabilitzar el sistema amb un compromís entre precisió i esforç de control. Funciona triant l’entrada de control $u=-Kx$, de manera que la dinàmica en bucle tancat passa de $A$ a $A-BK$, i el guany $K$ es calcula minimitzant una funció de cost quadràtica. Esquemàticament, el controlador LQR es pot representar de la següent manera:
 
 <div class="image-row">
@@ -1477,69 +1481,68 @@ Un controlador LQR és un regulador òptim per a sistemes lineals en espai d’e
 LQR és una llei de control òptim que utilitza un índex de rendiment quadràtic, o funció de cost, per trobar els factors de ponderació òptims $Q$ i $R$ i obtenir la matriu de guany LQR $K$. Per a un sistema lineal invariant en el temps, una llei de control òptima busca una entrada que permeti al sistema seguir una trajectòria òptima predeterminada i, al mateix temps, minimitzar la funció de cost. La dinàmica del sistema s’expressa com: 
 
 $$
-\dot{x}=g(x(t),u(t),t)
+    \dot{x}=g(x(t),u(t),t)
 $$
 
 Per al control òptim, el sistema requereix una funció de cost o criteri de rendiment:ç
 
 $$
-J=\int_{t_0}^{t_1} h(x(t),u(t),t)\,dt
+   J=\int_{t_0}^{t_1} h(x(t),u(t),t)\,dt
 $$
 
 L’equació de Hamilton-Jacobi es pot resoldre utilitzant un criteri de rendiment quadràtic per obtenir els paràmetres necessaris per calcular un guany òptim $K$.
 Definint la funció següent:
 
 $$
-f(x,t)=\min \int_{t_0}^{t_1} h(x,u)\,dt
+   f(x,t)=\min \int_{t_0}^{t_1} h(x,u)\,dt
 $$
 
 l’equació de Hamilton-Jacobi pren la forma:
 
 $$
-\frac{\partial f}{\partial t}
-=
--\min \left[
-h(x,u)+
-\left(\frac{\partial f}{\partial x}\right)^T g(x,u)
-\right]
+    \frac{\partial f}{\partial t}
+    =
+    -\min \left[
+    h(x,u)+
+    \left(\frac{\partial f}{\partial x}\right)^T g(x,u)
+    \right]
 $$
 
 Si l’equació és quadràtica, l’índex de rendiment quadràtic es pot escriure com:
 
 $$
-J=\int_{0}^{\infty}
-\left(
-x^TQx+u^TRu
-\right)dt
+    J=\int_{0}^{\infty}
+    \left(
+    x^TQx+u^TRu
+    \right)dt
 $$
 
 Substituint les equacions, s’obté: 
 $$
-\frac{\partial f}{\partial t}
-=
--\min \left[
-x^TQx+u^TRu+
-\left(\frac{\partial f}{\partial x}\right)^T(Ax+Bu)
-\right]
+    \frac{\partial f}{\partial t}
+    =
+    -\min \left[
+    x^TQx+u^TRu+
+    \left(\frac{\partial f}{\partial x}\right)^T(Ax+Bu)
+    \right]
 $$
 
 Un cop trobat el guany LQR, la nova entrada de control es defineix com:
 
 $$
-u=-Kx
-\tag{4.7}
+    u=-Kx
 $$
 
 on $K$ es defineix com:
 
 $$
-K=R^{-1}B^TP
+    K=R^{-1}B^TP
 $$
 
 i la matriu $P$ s’obté resolent l’equació algebraica de Riccati: 
 
 $$
-PA+A^TP+Q-PBR^{-1}B^TP=0
+   PA+A^TP+Q-PBR^{-1}B^TP=0
 $$
 
 Com que totes les altres matrius són conegudes o han estat definides prèviament, la solució del guany LQR es pot calcular directament. 
@@ -1547,20 +1550,71 @@ Com que totes les altres matrius són conegudes o han estat definides prèviamen
 Les matrius $Q$ i $R$ són matrius simètriques definides positives de dimensions $l \times l$ i $m \times m$, respectivament, i representen els pesos assignats als estats i a les entrades del sistema. Si observem la funció de cost:
 
 $$
-J=\int_{0}^{\infty}
-\left(
-x^TQx+u^TRu
-\right)dt
+    J=\int_{0}^{\infty}
+    \left(
+    x^TQx+u^TRu
+    \right)dt
 $$
 
-els paràmetres es poden configurar de manera independent per assolir una solució òptima. En el cas del pèndol invertit, la matriu $Q$ està relacionada amb la posició del carro, l’angle del pèndol, la velocitat del carro i la velocitat angular del pèndol. Quan s’incrementa o es redueix algun valor de $Q$, els estats es veuen més o menys afectats segons el pes assignat a cadascun d’ells. De manera similar, el valor de $R$ afecta l’entrada de control del sistema, que en aquest cas és la força aplicada al carro, o bé la tensió si el model d’actuació s’ha definit en termes elèctrics. Aquest valor es pot ajustar segons els objectius del dissenyador o segons les limitacions físiques de l’actuador. 
-En el model del pèndol invertit, la selecció de $Q$ i $R$ també es pot fer per prova i error fins a trobar una resposta temporal adequada. 
+Les matrius $Q$ i $R$ es poden ajustar de manera independent per definir el compromís desitjat entre qualitat de la regulació i esforç de control.  En el cas del pèndol invertit, la matriu $Q$ pondera els estats del model linealitzat, és a dir, la posició del carro, l’angle del pèndol, la velocitat del carro i la velocitat angular del pèndol. Quan augmenta el pes associat a un estat dins de $Q$, la funció de cost penalitza més les desviacions d’aquella variable i el controlador tendeix a corregir-la amb més intensitat. 
+De manera anàloga, la matriu $R$ pondera la variable de control.
+Si el model s’ha formulat amb voltatge com a entrada, aleshores $R$ penalitza la tensió aplicada al motor, de manera que valors elevats de $R$ tendeixen a limitar l’amplitud del senyal de control i produeixen una resposta més suau.  En canvi, valors més petits de $R$ permeten una actuació més agressiva, a costa d’un ús més intens de l’actuador.
 
-```matlab
-Q = diag([q1 q2 q3 q4]);
-R = r;
+Tanmateix, les matrius $Q$ i $R$ no proporcionen directament el guany del controlador. Un cop fixades aquestes ponderacions, el problema LQR es resol mitjançant l’equació algebraica de Riccati, la qual permet calcular la matriu $P$. A partir d’aquesta solució, el guany òptim s’obté com $K=R^{-1}B^TP$, on les matrius $A$ i $B$ corresponen al model final del sistema, en aquest cas formulat amb voltatge com a entrada.
+
+En el nostre cas, les matrius $Q$ i $R$ s’han determinat a partir d’un procés iteratiu de sintonització sobre el model linealitzat del pèndol invertit amb voltatge com a entrada. S’ha pres com a punt de partida una matriu $Q$ diagonal i un valor escalar de $R$, utilitzant com a referència l’exemple del material docent, i posteriorment s’han ajustat aquests pesos en funció de l’estabilització de l’angle, del desplaçament del carro i del nivell de voltatge requerit per l’actuador.
+
+En MATLAB, la funció `lqr` permet calcular directament el guany $K$ a partir de les matrius $A$, $B$, $Q$ i $R$. Per al model del pèndol invertit, s’han seleccionat les següents matrius de ponderació:
+
+```m
+Q = diag([q1 q2 q3 q4]);   % pesos dels estats
+R = r;                     % pes del voltatge d'entrada
 K = lqr(A,B,Q,R);
 ```
+
+En aquest codi, la funció `lqr(A,B,Q,R)` resol internament l’equació algebraica de Riccati associada al sistema i retorna el guany òptim $K$. En aquest cas, s’han seleccionat els pesos següents:
+
+$$
+    Q = \begin{bmatrix}
+    1200 & 0 & 0 & 0 \\\\
+    0 & 1500 & 0 & 0 \\\\
+    0 & 0 & 0 & 0 \\\\
+    0 & 0 & 0 & 0
+    \end{bmatrix},
+    \qquad
+    R = 0.05
+$$
+
+### 4.2 Simulació del sistema no linealitzat amb el controlador LQR en Simulink
+
+Un cop obtingut el guany $K$, s’ha implementat el controlador LQR al model no linealitzat del pèndol invertit a Simulink. En aquesta implementació, el bloc del pèndol invertit representa la planta i proporciona com a sortides els estats $x$, $\theta$, $\dot{x}$ i $\dot{\theta}$, dels quals escollim la posició del carro i l’angle del pèndol per construir el senyal d’error respecte de l’estat desitjat; aquest error s’introdueix en un bloc de producte on es multiplica pel guany $K$ per generar la comanda de control. El model en Simulink amb el controlador LQR es mostra a continuació:
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/model_lqr.png" alt="Model en Simulink amb controlador LQR" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Model en Simulink amb controlador LQR.</div>
+  </div>
+</div>
+
+Partint de les mateixes condicions inicials que en el cas del PID, és a dir, $\theta = \pi - (\pi * 0.1)$ com a condició inicial per a l’angle del pèndol i $x = 0.2$ com a condició inicial per a la posició del carro, s’obté la següent resposta:
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/resultats_lqr.png" alt="Resposta del sistema amb controlador LQR" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Resposta del sistema amb controlador LQR.</div>
+  </div>
+</div>
+
+El voltatge consumit per aquest model és, si limitem el motor a un voltatge màxim de 10V, el següent:
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/voltatge_lqr.png" alt="Voltatge consumit pel controlador LQR" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Voltatge consumit pel controlador LQR.</div>
+  </div>
+</div>
+
+És a dir, amb un guany LQR ben ajustat, el sistema és capaç d’estabilitzar-se al voltant del punt d’equilibri vertical, amb una resposta ràpida i amb un voltatge màxim de 10V. En comparació amb el controlador PID, el LQR mostra una resposta més suau i menys oscil·lacions inicials, a costa d’un ús més intensiu de l’actuador en els primers instants.
 
 ## 5. Filtre de Kalman
 
@@ -1574,7 +1628,7 @@ implementaico de tot junt: controlador LQR + filtre de Kalman i executar i veure
 
 ## 7. Extensions
 
-### 7.1 Primera extensió
+### 7.1 Primera extensió: LQI
 
 ### 7.2 Segona extensió
 

@@ -121,7 +121,7 @@ pre code {
 /* MODIFICAT: Reduïm la base (flex-basis) a 180px perquè hi capiguin 3 en una fila */
 .image-column {
   flex: 1 1 180px;
-  max-width: 320px;
+  max-width: 5000px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -406,7 +406,10 @@ a[href^="#bib"]:hover {
 - [5. Filtre de Kalman](#5-filtre-de-kalman)
 - [6. Controlador LQG](#6-controlador-lqg)
 - [7. Extensions](#7-extensions)
-  - [7.1 Primera extensió: LQI](#71-primera-extensió-lqi)
+  - [7.1 Primera extensió](#71-primera-extensió)
+    - [7.1.1 Implementació del model](#711-implementació-del-model)
+    - [7.1.2 Resultats](#712-resultats)
+  - [7.1.3 Conclusions de la primera extensió](#713-conclusions-de-la-primera-extensió)
   - [7.2 Segona extensió](#72-segona-extensió)
 - [8. Conclusions](#8-conclusions)
 - [9. Referències](#9-referències)
@@ -1628,7 +1631,171 @@ implementaico de tot junt: controlador LQR + filtre de Kalman i executar i veure
 
 ## 7. Extensions
 
-### 7.1 Primera extensió: LQI
+### 7.1 Primera extensió
+
+En aquesta extensió s’ha estudiat com afecta al comportament del pèndol invertit la presència de diferents nivells de fricció en el desplaçament horitzontal de la plataforma. El model dinàmic base ja incorpora un terme de fricció viscosa associat al moviment del carro, representat pel coeficient $c$, que en el sistema utilitzat té valor $c = 0.63$ i apareix a les equacions del moviment com una força oposada a la velocitat $\dot{x}$. L’objectiu d’aquesta extensió no és substituir el model original, sinó ampliar-lo amb una contribució addicional que permeti representar diferents condicions equivalents de contacte entre la plataforma i la superfície de desplaçament. Aquesta hipòtesi és coherent amb el model ja emprat, ja que es manté la idea de fricció viscosa lineal i no s’introdueixen no linealitats addicionals que compliquin innecessàriament l’anàlisi i la simulació.
+
+Per modelar aquest efecte s’ha afegit una força externa de fregament proporcional a la velocitat del carro i en direcció contrària al moviment, definida com $F_f = -c_f \dot{x}$, on $c_f$ on $c_f$ és un nou coeficient de fricció addicional. D’aquesta manera, la força total resistiva associada al moviment de la plataforma es pot interpretar com la suma de la fricció base del model i la fricció afegida en aquesta extensió:
+
+$$
+    F_{\text{total}} = -c \dot{x} - c_f \dot{x} = -(c + c_f) \dot{x}
+$$
+
+A nivell físic, aquesta extensió es pot entendre com una representació simplificada de superfícies amb diferents graus de resistència al moviment. No es pretén descriure amb detall el contacte real entre rodes, guies o superfícies, sinó estudiar de manera controlada com una variació de la fricció afecta l’estabilització del sistema, la resposta i l’esforç de control necessari per mantenir el pèndol prop de la posició invertida.
+
+#### 7.1.1 Implementació del model
+
+La implementació s’ha realitzat en Simulink afegint un bloc extern que genera la força de fricció $F_f$ a partir de la velocitat de la plataforma. Per fer-ho, s’ha pres la variable $\dot{x}$ de la sortida del model, s’ha multiplicat pel guany $-c_f$ i el resultat s’ha incorporat al sumatori de forces d’entrada del sistema, de manera que la fricció afegida sempre actua oposant-se al sentit del moviment. Aquesta forma d’implementació permet mantenir intacte el model base i, al mateix temps, variar de manera senzilla el nou paràmetre $c_f$. Això facilita la comparació entre diferents escenaris, ja que l’únic element que canvia entre simulacions és la magnitud de la fricció afegida. El model en Simulink amb la fricció addicional es mostra a continuació:
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/model_friccio.png" alt="Model en Simulink amb fricció addicional" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Model en Simulink amb fricció addicional.</div>
+  </div>
+</div>
+
+Els valors de $c_f$ seleccionats per a les simulacions han estat:
+
+<div class="table-container">
+  <div class="table-title">Valors escollits del coeficient de fricció addicional</div>
+  <table style="width: 260px; table-layout: fixed;">
+    <colgroup>
+      <col style="width: 90px;">
+      <col style="width: 170px;">
+    </colgroup>
+    <thead>
+      <tr>
+        <th><math><msub><mi>c</mi><mi>f</mi></msub></math></th>
+        <th>Justificació</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>0</td>
+        <td>cas base</td>
+      </tr>
+      <tr>
+        <td>0.3</td>
+        <td>fricció baixa</td>
+      </tr>
+      <tr>
+        <td>0.63</td>
+        <td>mateixa magnitud (doble)</td>
+      </tr>
+      <tr>
+        <td>1.26</td>
+        <td>doble magnitud (triple)</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>cas extrem</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="table-caption">Taula X. Valors del coeficient de fricció addicional <math><msub><mi>c</mi><mi>f</mi></msub></math> utilitzats a l’extensió del model.</div>
+</div>
+
+#### 7.1.2 Resultats 
+
+Pel cas base, és a dir, sense fricció addicional ($c_f = 0$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_01.png" alt="Resposta del sistema sense fricció addicional">
+    <div class="caption">Figura X: Resposta del sistema sense fricció addicional.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_02.png" alt="Resposta del sistema amb fricció addicional elevada">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional</div>
+  </div>
+</div>
+
+Aquest és el cas base. Veiem que la posició del carro $x$ presenta un petit desplaçament inicial, però convergeix cap a $0$, mentre que l’angle $\theta$ tendeix cap als $180^\circ$, que és la posició invertida de referència. També es veu que tant la velocitat $\dot{x}$ com la velocitat angular $\dot{\theta}$ tenen un pic transitori al començament i després decauen fins a valors propers a zero, cosa que indica que el pèndol s'estabilitza. A la gràfica de voltatge també s’observa una acció inicial intensa, necessària per corregir ràpidament la desviació inicial, seguida d’una disminució progressiva fins a pràcticament zero. En conjunt, el cas base mostra una resposta ràpida, amb un sobreimpuls moderat, però amb bona estabilització final.
+
+Pel cas amb fricció addicional baixa ($c_f = 0.3$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_03.png" alt="Resposta del sistema amb fricció addicional baixa">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional baixa.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_04.png" alt="Resposta del sistema amb fricció addicional baixa">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional baixa</div>
+  </div>
+</div>
+
+En comparació amb el cas base, aquest cas mostra un comportament molt similar i no s’hi observen canvis qualitatius importants en l’estabilització del sistema. El controlador continua portant la posició del carro cap a $0$ i l’angle cap als $180^\circ$ en un temps semblant, mantenint un transitori inicial i una estabilització final correctes.
+
+Pel cas amb fricció addicional mitjana, sent el doble del coeficient de fricció base ($c_f = 0.63$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_05.png" alt="Resposta del sistema amb fricció addicional elevada">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional elevada.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_06.png" alt="Resposta del sistema amb fricció addicional elevada">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional elevada</div>
+  </div>
+</div>
+
+En comparació amb el cas base, aquest cas continua estabilitzant correctament el sistema i manté una resposta molt semblant en la posició, l’angle i les seves derivades, sense canvis qualitatius importants en la convergència final. La diferència més clara apareix en l’acció del motor, ja que el pic negatiu de voltatge es redueix respecte del cas base i passa a situar-se al voltant de $-8$ V, cosa que indica una menor demanda instantània de voltatge a l'inici. Això suggereix que, en aquest cas amb fricció addicional de doble magnitud, aquesta, ajuda a esmorteir parcialment la resposta inicial i fa que el controlador no necessiti una correcció tan agressiva com en el cas base. Tot i aquesta reducció en el pic de voltatge, el sistema conserva una bona estabilització final, amb $x \to 0$, $\theta \to 180^\circ$ i velocitats finals properes a zero.
+
+Pel cas amb fricció addicional més elevada, sent el triple del coeficient de fricció base ($c_f = 1.26$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_07.png" alt="Resposta del sistema amb fricció addicional més elevada">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional més elevada.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_08.png" alt="Resposta del sistema amb fricció addicional més elevada">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional més elevada</div>
+  </div>
+</div>
+
+En aquest cas, el sistema continua estabilitzant-se correctament i es torna a observar una reducció del voltatge màxim requerit en el transitori inicial. Aquest fet confirma que l’augment de la fricció ajuda a esmorteir la resposta i redueix l’esforç instantani que ha de fer el controlador per corregir la desviació inicial. Per tant, la fricció continua sent beneficiosa, ja que no empitjora apreciablement el temps d’estabilització, però sí que redueix la demanda instantània de voltatge i la velocitat necessària durant el transitori inicial si es compara amb el cas base.
+
+Pel cas amb fricció addicional extrema ($c_f = 5$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_09.png" alt="Resposta del sistema amb fricció addicional extrema">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional extrema.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_10.png" alt="Resposta del sistema amb fricció addicional extrema">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional extrema</div>
+  </div>
+</div>
+
+Aquí el comportament canvia radicalment, perquè el sistema ja no convergeix cap a l’equilibri desitjat sinó que manté una oscil·lació persistent i un desplaçament continu del carro. La posició $x$ creix gairebé de manera monòtona al llarg de tota la simulació, l’angle $\theta$ oscil·la amb una amplitud encara apreciable, i la velocitat $\dot{x}$ no decau cap a zero sinó que es manté al voltant d’un valor positiu. Això contrasta amb la resta de casos, on el controlador aconseguia portar el sistema cap a $x=0$, $\theta=180^\circ$ i velocitats finals pròximes a zero en pocs segons. La gràfica de voltatge ho reforça encara més, perquè el voltatge queda constant al valor màxim, al voltant de $10$ V, durant tota la simulació. Això indica que el controlador està treballant en saturació i que, fins i tot aplicant l’acció màxima, no és capaç de recuperar una estabilització comparable a la del cas base. Provem de donar-li un motor més potent, amb un voltatge màxim de 24V:
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_11.png" alt="Resposta del sistema amb fricció addicional extrema i motor més potent">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional extrema i motor més potent.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_12.png" alt="Voltatge del sistema amb fricció addicional extrema i motor més potent">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional extrema i motor més potent</div>
+  </div>
+</div>
+
+En augmentar la tensió màxima disponible del motor fins a $24$ V, el sistema aconsegueix tornar a estabilitzar-se. Això mostra que la pèrdua de rendiment observada en el cas anterior estava fortament relacionada amb la saturació de l’acció de control, ja que el límit de tensió disponible no era suficient per generar la força requerida. Amb un marge més gran d’actuació, el controlador recupera la capacitat de portar el carro i el pèndol cap a l’equilibri desitjat, amb un comportament similar al cas base.
+
+### 7.1.3 Conclusions de la primera extensió
+
+Aquesta extensió mostra que una fricció addicional moderada no perjudica l’estabilització del sistema i, fins i tot, pot ajudar a esmorteir la resposta inicial i reduir la demanda instantània de voltatge del motor. En canvi, quan la fricció és massa elevada, el controlador deixa de tenir prou autoritat de control i el sistema entra en saturació, perdent la capacitat d’estabilitzar-se amb el límit de tensió inicial.
+
+Des d’un punt de vista industrial, aquest resultat és important perquè molts sistemes reals treballen sobre superfícies amb resistències al moviment diferents. Si el sistema ha de funcionar sobre terres més durs o amb més fregament, cal preveure un actuador amb més marge de tensió o parell, i possiblement reajustar el controlador; en canvi, amb superfícies més favorables, el sistema pot estabilitzar-se correctament amb menys esforç de control.
 
 ### 7.2 Segona extensió
 

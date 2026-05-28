@@ -1298,7 +1298,14 @@ $$
 
 on $r$ és el senyal de referència i $y$ és el senyal de sortida. 
 
-Aquest senyal d’error entra al controlador, on és processat mitjançant les accions proporcional, integral i derivativa, cadascuna amb el seu guany corresponent. Aquests guanys es poden ajustar de manera relativament intuïtiva i, un cop ben seleccionats, permeten obtenir la resposta desitjada del sistema. 
+Aquest senyal d’error entra al controlador, on és processat mitjançant les accions proporcional, integral i derivativa, cadascuna amb el seu guany corresponent. Aquests guanys es poden ajustar de manera relativament intuïtiva i, un cop ben seleccionats, permeten obtenir la resposta desitjada del sistema. Aquesta figura mostra l’esquema bàsic d'un controlador PID:
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/esquema_pid.png" alt="Esquema bàsic d’un sistema de control en bucle tancat amb un controlador PID" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Esquema bàsic d’un controlador PID.</div>
+  </div>
+</div>
 
 ### 3.2 Ús del PID i efecte dels guanys
 
@@ -1364,7 +1371,7 @@ En essència, el senyal d’error es multiplica per una acció proporcional, s�
 Afegim inicialment un controlador PID al model linealitzatamb l’objectiu de visualitzar l’estructura bàsica del llaç de control i disposar d’un primer esquema de treball abans de passar al tractament del model no linealitzat. Aquest model linealitzat amb el controlador PID associat a l’angle del pèndol es mostra a continuació:
 
 <div class="image-row">
-  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+  <div class="image-column" style="width: 85%; max-width: 950px; margin: 0 auto;">
     <img src="./images/model_pid_lineal.png" alt="Model linealitzat en Simulink amb controlador PID" style="width: 100%; height: auto; display: block;">
     <div class="caption">Figura X: Model linealitzat en Simulink amb controlador PID associat a l’angle del pèndol.</div>
   </div>
@@ -1457,6 +1464,103 @@ I, partint de $\theta = \pi - (\pi * 0.1)$ com a condició inicial per a l’ang
 En aquest cas, i a diferència de la resposta en llaç obert, el sistema és capaç d’estabilitzar-se al voltant del punt d’equilibri vertical. Tot i que es poden observar algunes oscil·lacions inicials, aquestes s’amortitzen ràpidament i el sistema aconsegueix una posició estable amb un error molt petit respecte de la posició desitjada.
 
 ## 4. Controlador LQR
+
+Un controlador LQR és un regulador òptim per a sistemes lineals en espai d’estats que calcula automàticament el guany de realimentació $K$ per estabilitzar el sistema amb un compromís entre precisió i esforç de control. Funciona triant l’entrada de control $u=-Kx$, de manera que la dinàmica en bucle tancat passa de $A$ a $A-BK$, i el guany $K$ es calcula minimitzant una funció de cost quadràtica. Esquemàticament, el controlador LQR es pot representar de la següent manera:
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/esquema_lqr.png" alt="Esquema bàsic d’un controlador LQR" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Esquema bàsic d’un controlador LQR.</div>
+  </div>
+</div>
+
+LQR és una llei de control òptim que utilitza un índex de rendiment quadràtic, o funció de cost, per trobar els factors de ponderació òptims $Q$ i $R$ i obtenir la matriu de guany LQR $K$. Per a un sistema lineal invariant en el temps, una llei de control òptima busca una entrada que permeti al sistema seguir una trajectòria òptima predeterminada i, al mateix temps, minimitzar la funció de cost. La dinàmica del sistema s’expressa com: 
+
+$$
+\dot{x}=g(x(t),u(t),t)
+$$
+
+Per al control òptim, el sistema requereix una funció de cost o criteri de rendiment:ç
+
+$$
+J=\int_{t_0}^{t_1} h(x(t),u(t),t)\,dt
+$$
+
+L’equació de Hamilton-Jacobi es pot resoldre utilitzant un criteri de rendiment quadràtic per obtenir els paràmetres necessaris per calcular un guany òptim $K$.
+Definint la funció següent:
+
+$$
+f(x,t)=\min \int_{t_0}^{t_1} h(x,u)\,dt
+$$
+
+l’equació de Hamilton-Jacobi pren la forma:
+
+$$
+\frac{\partial f}{\partial t}
+=
+-\min \left[
+h(x,u)+
+\left(\frac{\partial f}{\partial x}\right)^T g(x,u)
+\right]
+$$
+
+Si l’equació és quadràtica, l’índex de rendiment quadràtic es pot escriure com:
+
+$$
+J=\int_{0}^{\infty}
+\left(
+x^TQx+u^TRu
+\right)dt
+$$
+
+Substituint les equacions, s’obté: 
+$$
+\frac{\partial f}{\partial t}
+=
+-\min \left[
+x^TQx+u^TRu+
+\left(\frac{\partial f}{\partial x}\right)^T(Ax+Bu)
+\right]
+$$
+
+Un cop trobat el guany LQR, la nova entrada de control es defineix com:
+
+$$
+u=-Kx
+\tag{4.7}
+$$
+
+on $K$ es defineix com:
+
+$$
+K=R^{-1}B^TP
+$$
+
+i la matriu $P$ s’obté resolent l’equació algebraica de Riccati: 
+
+$$
+PA+A^TP+Q-PBR^{-1}B^TP=0
+$$
+
+Com que totes les altres matrius són conegudes o han estat definides prèviament, la solució del guany LQR es pot calcular directament. 
+
+Les matrius $Q$ i $R$ són matrius simètriques definides positives de dimensions $l \times l$ i $m \times m$, respectivament, i representen els pesos assignats als estats i a les entrades del sistema. Si observem la funció de cost:
+
+$$
+J=\int_{0}^{\infty}
+\left(
+x^TQx+u^TRu
+\right)dt
+$$
+
+els paràmetres es poden configurar de manera independent per assolir una solució òptima. En el cas del pèndol invertit, la matriu $Q$ està relacionada amb la posició del carro, l’angle del pèndol, la velocitat del carro i la velocitat angular del pèndol. Quan s’incrementa o es redueix algun valor de $Q$, els estats es veuen més o menys afectats segons el pes assignat a cadascun d’ells. De manera similar, el valor de $R$ afecta l’entrada de control del sistema, que en aquest cas és la força aplicada al carro, o bé la tensió si el model d’actuació s’ha definit en termes elèctrics. Aquest valor es pot ajustar segons els objectius del dissenyador o segons les limitacions físiques de l’actuador. 
+En el model del pèndol invertit, la selecció de $Q$ i $R$ també es pot fer per prova i error fins a trobar una resposta temporal adequada. 
+
+```matlab
+Q = diag([q1 q2 q3 q4]);
+R = r;
+K = lqr(A,B,Q,R);
+```
 
 ## 5. Filtre de Kalman
 

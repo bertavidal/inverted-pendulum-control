@@ -1562,11 +1562,185 @@ R = r;
 K = lqr(A,B,Q,R);
 ```
 
+<div class="page-break"></div>
+
 ## 5. Filtre de Kalman
 
-explicar que es el filtre de kalman i com l'apliquem al pèndol.
-simulació del sistema amb un filtre de kalman per a la estimació de l'estat
-mostrar els resultats obtinguts i comentar-los breument
+En les aplicacions reals de control, no sempre és possible mesurar directament tots els estats del sistema. A més, les mesures disponibles solen estar contaminades per soroll de sensor, i el model matemàtic del sistema conté incerteses degudes a pertorbacions externes o a simplificacions del model físic. En aquestes condicions, el controlador LQR dissenyat a l'apartat anterior no es pot aplicar directament, ja que requereix el coneixement de tots els estats. Per resoldre aquest problema s'introdueix el **Filtre de Kalman**, un estimador òptim que, a partir de l'entrada de control i les mesures disponibles —ambdues contaminades per soroll—, reconstrueix una estimació dels estats del sistema que minimitza l'error quadràtic mig de l'estimació.
+
+### 5.1 Fonaments teòrics
+
+Suposem que tenim un estat estimat $\hat{x}$ que pretén reproduir el vector d'estat real $x$. Si el sistema és:
+
+$$
+\dot{x} = Ax + Bu
+$$
+
+l'error d'estimació es defineix com:
+
+$$
+e = x - \hat{x}
+$$
+
+i la seva dinàmica és:
+
+$$
+\dot{e} = A\,e
+$$
+
+Si la matriu $A$ és asimptòticament estable, l'error convergeix a zero per a qualsevol condició inicial. En canvi, si $A$ és inestable —com és el cas del pèndol invertit—, l'estimació divergeix. Per corregir-ho, s'introdueix un guany d'observador $L$ que alimenta la diferència entre la sortida mesurada i la sortida estimada:
+
+$$
+\dot{\hat{x}} = A\hat{x} + Bu + L(y - \hat{y})
+\qquad
+\hat{y} = C\hat{x}
+$$
+
+Amb aquesta correcció, la dinàmica de l'error passa a ser:
+
+$$
+\dot{e} = (A - LC)\,e
+$$
+
+i es pot fer asimptòticament estable escollint $L$ adequadament. Aquesta estructura es denomina **observador d'ordre complet**.
+
+Per al Filtre de Kalman, que és un estimador òptim respecte d'un observador genèric, el model del sistema inclou explícitament els termes de soroll:
+
+$$
+\dot{\hat{x}} = A\hat{x} + Bu + Gw(t)
+\qquad
+\hat{y} = C\hat{x} + v(t)
+$$
+
+on $w(t)$ és el soroll de procés i $v(t)$ és el soroll de mesura, ambdós de tipus gaussià de mitjana zero, amb matrius de covariança:
+
+$$
+S_w(\omega) = Q_N, \qquad S_v(\omega) = R_N
+$$
+
+El guany de Kalman $L$ s'obté resolent un problema dual al del LQR: en lloc de minimitzar l'esforç de control, es minimitza la covariança de l'error d'estimació. Analíticament, el guany òptim és:
+
+$$
+L = P_e C^T R_N^{-1}
+$$
+
+on $P_e$ és la solució de l'equació algebraica de Riccati associada al problema d'estimació:
+
+$$
+A P_e + P_e A^T + G Q_N G^T - P_e C^T R_N^{-1} C P_e = 0
+$$
+
+En la pràctica, aquest guany es pot calcular a MATLAB aprofitant la dualitat entre el problema de control LQR i el d'estimació. Si es defineix el sistema transposat $(A^T, C^T)$ com a planta, el problema d'estimació és equivalent a trobar el guany LQR òptim per a aquest sistema dual:
+
+```matlab
+L = lqr(A', C', Vd, Vn)';
+```
+
+on `Vd` és la covariança del soroll de procés ($Q_N$) i `Vn` és la covariança del soroll de mesura ($R_N$).
+
+### 5.2 Aplicació al pèndol invertit
+
+#### Observabilitat del sistema
+
+Abans de dissenyar qualsevol observador, cal verificar que el sistema és **observable**, és a dir, que tots els estats poden ser reconstruïts a partir de les sortides. La condició necessària i suficient és que la matriu d'observabilitat tingui rang màxim:
+
+$$
+\mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ CA^3 \end{bmatrix}, \qquad \text{rang}(\mathcal{O}) = n = 4
+$$
+
+Donat que al model linealitzat la matriu de sortida és $C = I_4$ (es mesuren tots quatre estats), l'observabilitat és trivial i el rang resulta 4, tal com confirma MATLAB:
+
+```
+Rank observabilitat: 4 / 4
+```
+
+Per tant, el sistema és completament observable i l'estimador es pot implementar correctament.
+
+#### Configuració de les matrius de covariança
+
+Les matrius de covariança $Q_N$ i $R_N$ regulen el compromís entre confiar en el model del sistema o en les mesures dels sensors. Valors grans de $Q_N$ indiquen un model incert i forcen l'estimador a seguir les mesures. Valors grans de $R_N$ indiquen sensors sorollosos i forcen l'estimador a confiar més en la predicció del model.
+
+En la implementació d'aquest treball, s'han adoptat valors iguals i moderats per a ambdues matrius, reflectint un nivell de confiança equivalent en el model i en els sensors:
+
+$$
+Q_N = 0.001 \cdot I_4, \qquad R_N = 0.001 \cdot I_4
+$$
+
+```matlab
+Vd = 0.001 * eye(n);   % Covariança del soroll de procés
+Vn = 0.001 * eye(4);   % Covariança del soroll de mesura
+L  = lqr(A', C', Vd, Vn)';
+```
+
+#### Guany de Kalman obtingut
+
+El guany $L$ obtingut numèricament és:
+
+$$
+L =
+\begin{bmatrix}
+ 1.0035 &  0.0143 &  0.0053 &  0.0579 \\
+ 0.0143 &  0.4472 &  0.0988 &  2.3379 \\
+ 0.0053 &  0.0988 &  0.0510 &  0.4500 \\
+ 0.0579 &  2.3379 &  0.4500 & 15.1112
+\end{bmatrix}
+$$
+
+Les columnes d'$L$ associades a $\theta$ i $\dot{\theta}$ (columnes 2 i 4) presenten valors notablement superiors als de les columnes de $x$ i $\dot{x}$. Això és consistent amb la dinàmica del sistema: l'angle del pèndol és l'estat més crític i inestable, i per tant requereix una correcció estimada més agressiva.
+
+#### Valors propis de l'observador
+
+La velocitat de convergència de l'estimador ve determinada pels valors propis de la matriu $A - LC$:
+
+```
+Valors propis A−LC:  −1.0036,  −18.988,  −7.526 ± 0.922i
+```
+
+Tots quatre valors propis tenen part real estrictament negativa, cosa que garanteix que l'estimador és asimptòticament estable i que l'error d'estimació convergeix a zero. A més, el valor propi dominant és $-1.0036$, significativament més ràpid que la dinàmica inestable del sistema en llaç obert (que presentava un pol positiu a $+6.92$), de manera que l'observador pot seguir el sistema sense retard significatiu.
+
+### 5.3 Implementació a Simulink
+
+El diagrama implementat a Simulink per a l'etapa del Filtre de Kalman s'il·lustra a la figura següent. S'hi distingeixen tres parts principals: la planta no lineal del pèndol, el soroll afegit a les sortides, i el bloc estimador del Filtre de Kalman.
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/diagrama_kalman.jpg" alt="Diagrama Simulink del Filtre de Kalman" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Diagrama Simulink de l'estimació d'estat amb el Filtre de Kalman. La planta no lineal rep com a entrada la força generada pel subsistema <code>Voltage_to_Force</code>. Les sortides s'afegeix soroll de mesura i de procés i s'introdueix al bloc <code>Kalman Filter</code>, que reconstrueix els quatre estats estimats $\hat{x}$, $\hat{\theta}$, $\hat{\dot{x}}$ i $\hat{\dot{\theta}}$.</div>
+  </div>
+</div>
+
+Concretament, el diagrama conté els elements següents:
+
+- **`Voltage_to_Force`**: subsistema que converteix la tensió d'entrada en la força equivalent aplicada al carro, incorporant la dinàmica elèctrica del motor (resistència d'armadura, constant de parell i constant de força contraelectromotriu).
+- **`Soroll de procés`**: pertorbació gaussiana afegida directament a la força que rep la planta, que modela les incerteses del model físic.
+- **`Inverted Pendulum System`**: planta no lineal que integra les equacions del moviment i proporciona els quatre estats reals $x$, $\theta$, $\dot{x}$ i $\dot{\theta}$.
+- **`Soroll de mesura`**: soroll gaussià afegit a les sortides de la planta, que modela el soroll dels sensors.
+- **`Kalman Filter`**: observador que rep l'entrada de control $u$ i les mesures sorolloses $y$, i estima el vector d'estat $\hat{x}$.
+- **Blocs de comparació**: permeten visualitzar simultàniament l'estat real i l'estat estimat per a cadascuna de les quatre variables.
+
+Les condicions inicials del sistema per a la simulació han estat $x_0 = [0.2,\; \pi - 0.1\pi,\; 0,\; 0]^T$, coincidint amb les emprades a les seccions anteriors.
+
+### 5.4 Resultats de la simulació
+
+La resposta de la simulació es mostra a la figura següent, on per a cada estat s'ha representat en vermell el valor real i en blau el valor estimat pel Filtre de Kalman.
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/output_kalman.jpg" alt="Resultats del Filtre de Kalman" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats del sistema: posició del carro $x$, angle del pèndol $\theta$, velocitat del carro $\dot{x}$ i velocitat angular del pèndol $\dot{\theta}$. Simulació de 10 s amb condicions inicials $x_0 = [0.2,\; 0.9\pi,\; 0,\; 0]^T$ i soroll de procés i de mesura amb covariança $0.001\,I_4$.</div>
+  </div>
+</div>
+
+S'observa que, en tots quatre estats, l'estimació del Filtre de Kalman segueix amb bona fidelitat la trajectòria real del sistema, tot i que el llaç no té controlador i, per tant, la resposta és en llaç obert —i divergent—. En detall:
+
+- **Posició del carro $x$**: l'estimació (blava) superposa gairebé perfectament el valor real (vermell). El carro deriva de manera creixent en absència de control, cosa esperada en llaç obert.
+- **Angle del pèndol $\theta$**: les dues corbes presenten una discrepància inicial clara durant els primers instants, deguda al transitori de convergència de l'estimador. A partir d'aproximadament $t = 4\,\text{s}$ la diferència es redueix considerablement i les corbes convergeixen. Les oscil·lacions de gran amplitud dels primers segons reflecteixen la inestabilitat natural del pèndol sense control actiu.
+- **Velocitat del carro $\dot{x}$**: l'estimació segueix amb notable fidelitat la trajectòria real un cop superat el transitori inicial. El soroll de mesura és visible a la corba real.
+- **Velocitat angular $\dot{\theta}$**: d'entre tots els estats, és el que presenta el transitori inicial de major amplitud. Malgrat això, a partir de $t \approx 4\,\text{s}$ l'estimació convergeix bé al valor real.
+
+En conjunt, els resultats confirmen que el Filtre de Kalman dissenyat és capaç d'estimar satisfactòriament l'estat del pèndol invertit en presència de soroll tant de procés com de mesura. El transitori inicial s'explica per la diferència entre les condicions inicials reals del sistema ($x_0 \neq 0$) i les condicions inicials de l'estimador, que s'inicialitza a zero. Un cop transcorregut aquest transitori, l'estimador s'adap a la trajectòria real i la segueix amb un error reduït. Això és precisament la base que permetrà, a l'apartat següent, combinar l'estimador amb el controlador LQR per obtenir el controlador LQG complet.
+
+<div class="page-break"></div>
 
 ## 6. Controlador LQG
 

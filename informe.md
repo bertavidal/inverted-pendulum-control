@@ -406,10 +406,6 @@ a[href^="#bib"]:hover {
 - [5. Filtre de Kalman](#5-filtre-de-kalman)
   - [5.1 Fonaments teòrics](#51-fonaments-teòrics)
   - [5.2 Aplicació al pèndol invertit](#52-aplicació-al-pèndol-invertit)
-    - [Observabilitat del sistema](#observabilitat-del-sistema)
-    - [Configuració de les matrius de covariança](#configuració-de-les-matrius-de-covariança)
-    - [Guany de Kalman obtingut](#guany-de-kalman-obtingut)
-    - [Valors propis de l'observador](#valors-propis-de-lobservador)
   - [5.3 Implementació a Simulink](#53-implementació-a-simulink)
   - [5.4 Resultats de la simulació](#54-resultats-de-la-simulació)
 - [6. Controlador LQG](#6-controlador-lqg)
@@ -1703,63 +1699,63 @@ on `Vd` és la covariança del soroll de procés ($Q_N$) i `Vn` és la covarian�
 
 ### 5.2 Aplicació al pèndol invertit
 
-#### Observabilitat del sistema
+1. Observabilitat del sistema:
 
-Abans de dissenyar qualsevol observador, cal verificar que el sistema és **observable**, és a dir, que tots els estats poden ser reconstruïts a partir de les sortides. La condició necessària i suficient és que la matriu d'observabilitat tingui rang màxim:
+    Abans de dissenyar qualsevol observador, cal verificar que el sistema és **observable**, és a dir, que tots els estats poden ser reconstruïts a partir de les sortides. La condició necessària i suficient és que la matriu d'observabilitat tingui rang màxim:
 
-$$
-\mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ CA^3 \end{bmatrix}, \qquad \text{rang}(\mathcal{O}) = n = 4
-$$
+    $$
+        \mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ CA^3 \end{bmatrix}, \qquad \text{rang}(\mathcal{O}) = n = 4
+    $$
 
-Donat que al model linealitzat la matriu de sortida és $C = I_4$ (es mesuren tots quatre estats), l'observabilitat és trivial i el rang resulta 4, tal com confirma MATLAB:
+    Donat que al model linealitzat la matriu de sortida és $C = I_4$ (es mesuren tots quatre estats), l'observabilitat és trivial i el rang resulta 4, tal com confirma MATLAB:
 
-```m
-Rank observabilitat: 4 / 4
-```
+    ```m
+    Rank observabilitat: 4 / 4
+    ```
 
-Per tant, el sistema és completament observable i l'estimador es pot implementar correctament.
+    Per tant, el sistema és completament observable i l'estimador es pot implementar correctament.
 
-#### Configuració de les matrius de covariança
+2. Configuració de les matrius de covariança:
 
-Les matrius de covariança $Q_N$ i $R_N$ regulen el compromís entre confiar en el model del sistema o en les mesures dels sensors. Valors grans de $Q_N$ indiquen un model incert i forcen l'estimador a seguir les mesures. Valors grans de $R_N$ indiquen sensors sorollosos i forcen l'estimador a confiar més en la predicció del model.
+    Les matrius de covariança $Q_N$ i $R_N$ regulen el compromís entre confiar en el model del sistema o en les mesures dels sensors. Valors grans de $Q_N$ indiquen un model incert i forcen l'estimador a seguir les mesures. Valors grans de $R_N$ indiquen sensors sorollosos i forcen l'estimador a confiar més en la predicció del model.
 
-En la implementació d'aquest treball, s'han adoptat valors iguals i moderats per a ambdues matrius, reflectint un nivell de confiança equivalent en el model i en els sensors:
+    En la implementació d'aquest treball, s'han adoptat valors iguals i moderats per a ambdues matrius, reflectint un nivell de confiança equivalent en el model i en els sensors:
 
-$$
-Q_N = 0.001 \cdot I_4, \qquad R_N = 0.001 \cdot I_4
-$$
+    $$
+        Q_N = 0.001 \cdot I_4, \qquad R_N = 0.001 \cdot I_4
+    $$
 
-```matlab
-Vd = 0.001 * eye(n);   % Covariança del soroll de procés
-Vn = 0.001 * eye(4);   % Covariança del soroll de mesura
-L  = lqr(A', C', Vd, Vn)';
-```
+    ```matlab
+    Vd = 0.001 * eye(n);   % Covariança del soroll de procés
+    Vn = 0.001 * eye(4);   % Covariança del soroll de mesura
+    L  = lqr(A', C', Vd, Vn)';
+    ```
 
-#### Guany de Kalman obtingut
+3. Guany de Kalman obtingut:
 
-El guany $L$ obtingut numèricament és:
+    El guany $L$ obtingut numèricament és:
 
-$$
-L =
-\begin{bmatrix}
- 1.0035 &  0.0143 &  0.0053 &  0.0579 \\
- 0.0143 &  0.4472 &  0.0988 &  2.3379 \\
- 0.0053 &  0.0988 &  0.0510 &  0.4500 \\
- 0.0579 &  2.3379 &  0.4500 & 15.1112
-\end{bmatrix}
-$$
+    $$
+        L =
+        \begin{bmatrix}
+        1.0035 &  0.0143 &  0.0053 &  0.0579 \\
+        0.0143 &  0.4472 &  0.0988 &  2.3379 \\
+        0.0053 &  0.0988 &  0.0510 &  0.4500 \\
+        0.0579 &  2.3379 &  0.4500 & 15.1112
+        \end{bmatrix}
+    $$
 
-Les columnes d'$L$ associades a $\theta$ i $\dot{\theta}$ (columnes 2 i 4) presenten valors notablement superiors als de les columnes de $x$ i $\dot{x}$. Això és consistent amb la dinàmica del sistema: l'angle del pèndol és l'estat més crític i inestable, i per tant requereix una correcció estimada més agressiva.
+    Les columnes d'$L$ associades a $\theta$ i $\dot{\theta}$ (columnes 2 i 4) presenten valors notablement superiors als de les columnes de $x$ i $\dot{x}$. Això és consistent amb la dinàmica del sistema: l'angle del pèndol és l'estat més crític i inestable, i per tant requereix una correcció estimada més agressiva.
 
-#### Valors propis de l'observador
+4. Valors propis de l'observador:
 
-La velocitat de convergència de l'estimador ve determinada pels valors propis de la matriu $A - LC$:
+    La velocitat de convergència de l'estimador ve determinada pels valors propis de la matriu $A - LC$:
 
-```matlab
-Valors propis A−LC:  −1.0036,  −18.988,  −7.526 ± 0.922i
-```
+    ```matlab
+    Valors propis A−LC:  −1.0036,  −18.988,  −7.526 ± 0.922i
+    ```
 
-Tots quatre valors propis tenen part real estrictament negativa, cosa que garanteix que l'estimador és asimptòticament estable i que l'error d'estimació convergeix a zero. A més, el valor propi dominant és $-1.0036$, significativament més ràpid que la dinàmica inestable del sistema en llaç obert (que presentava un pol positiu a $+6.92$), de manera que l'observador pot seguir el sistema sense retard significatiu.
+    Tots quatre valors propis tenen part real estrictament negativa, cosa que garanteix que l'estimador és asimptòticament estable i que l'error d'estimació convergeix a zero. A més, el valor propi dominant és $-1.0036$, significativament més ràpid que la dinàmica inestable del sistema en llaç obert (que presentava un pol positiu a $+6.92$), de manera que l'observador pot seguir el sistema sense retard significatiu.
 
 ### 5.3 Implementació a Simulink
 

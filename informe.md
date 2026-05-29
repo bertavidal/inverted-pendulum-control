@@ -404,6 +404,14 @@ a[href^="#bib"]:hover {
   - [4.1 Introducció al control òptim](#41-introducció-al-control-òptim)
   - [4.2 Simulació del sistema no linealitzat amb el controlador LQR en Simulink](#42-simulació-del-sistema-no-linealitzat-amb-el-controlador-lqr-en-simulink)
 - [5. Filtre de Kalman](#5-filtre-de-kalman)
+  - [5.1 Fonaments teòrics](#51-fonaments-teòrics)
+  - [5.2 Aplicació al pèndol invertit](#52-aplicació-al-pèndol-invertit)
+    - [Observabilitat del sistema](#observabilitat-del-sistema)
+    - [Configuració de les matrius de covariança](#configuració-de-les-matrius-de-covariança)
+    - [Guany de Kalman obtingut](#guany-de-kalman-obtingut)
+    - [Valors propis de l'observador](#valors-propis-de-lobservador)
+  - [5.3 Implementació a Simulink](#53-implementació-a-simulink)
+  - [5.4 Resultats de la simulació](#54-resultats-de-la-simulació)
 - [6. Controlador LQG](#6-controlador-lqg)
 - [7. Extensions](#7-extensions)
   - [7.1 Primera extensió](#71-primera-extensió)
@@ -1705,7 +1713,7 @@ $$
 
 Donat que al model linealitzat la matriu de sortida és $C = I_4$ (es mesuren tots quatre estats), l'observabilitat és trivial i el rang resulta 4, tal com confirma MATLAB:
 
-```
+```m
 Rank observabilitat: 4 / 4
 ```
 
@@ -1747,7 +1755,7 @@ Les columnes d'$L$ associades a $\theta$ i $\dot{\theta}$ (columnes 2 i 4) prese
 
 La velocitat de convergència de l'estimador ve determinada pels valors propis de la matriu $A - LC$:
 
-```
+```matlab
 Valors propis A−LC:  −1.0036,  −18.988,  −7.526 ± 0.922i
 ```
 

@@ -121,7 +121,7 @@ pre code {
 /* MODIFICAT: Reduïm la base (flex-basis) a 180px perquè hi capiguin 3 en una fila */
 .image-column {
   flex: 1 1 180px;
-  max-width: 320px;
+  max-width: 5000px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -401,10 +401,15 @@ a[href^="#bib"]:hover {
   - [3.2 Ús del PID i efecte dels guanys](#32-ús-del-pid-i-efecte-dels-guanys)
   - [3.3 Implementació del controlador PID al pèndol invertit amb Simulink](#33-implementació-del-controlador-pid-al-pèndol-invertit-amb-simulink)
 - [4. Controlador LQR](#4-controlador-lqr)
+  - [4.1 Introducció al control òptim](#41-introducció-al-control-òptim)
+  - [4.2 Simulació del sistema no linealitzat amb el controlador LQR en Simulink](#42-simulació-del-sistema-no-linealitzat-amb-el-controlador-lqr-en-simulink)
 - [5. Filtre de Kalman](#5-filtre-de-kalman)
 - [6. Controlador LQG](#6-controlador-lqg)
 - [7. Extensions](#7-extensions)
   - [7.1 Primera extensió](#71-primera-extensió)
+    - [7.1.1 Implementació del model](#711-implementació-del-model)
+    - [7.1.2 Resultats](#712-resultats)
+  - [7.1.3 Conclusions de la primera extensió](#713-conclusions-de-la-primera-extensió)
   - [7.2 Segona extensió](#72-segona-extensió)
 - [8. Conclusions](#8-conclusions)
 - [9. Referències](#9-referències)
@@ -1293,7 +1298,7 @@ Un dels mètodes de control en bucle tancat més importants i encara avui plenam
 L’error es defineix com:
 
 $$
-  e(t)=r-y
+   e(t)=r-y
 $$
 
 on $r$ és el senyal de referència i $y$ és el senyal de sortida. 
@@ -1312,13 +1317,13 @@ Aquest senyal d’error entra al controlador, on és processat mitjançant les a
 La funció de transferència d’un controlador PID en el domini de Laplace es pot escriure com:
 
 $$
-  G(s)=K_P+\frac{K_I}{s}+K_D s
+    G(s)=K_P+\frac{K_I}{s}+K_D s
 $$
 
 En el domini temporal, l’expressió corresponent és:
 
 $$
-  u(t)=K_P e(t)+K_I \int e(t)\,dt+K_D \frac{de(t)}{dt}
+    u(t)=K_P e(t)+K_I \int e(t)\,dt+K_D \frac{de(t)}{dt}
 $$
 
 En essència, el senyal d’error es multiplica per una acció proporcional, s’integra i també es deriva per generar un nou senyal d’entrada capaç de produir la resposta desitjada.  Per aconseguir una resposta òptima davant d’una entrada o d’una pertorbació, és necessari ajustar adequadament els guanys de cadascun d’aquests tres termes. Hi ha diferents mètodes per fer aquest ajust, però abans és important entendre quin efecte té cada guany sobre la resposta del sistema. Podem veure la següent taula, que resumeix l’efecte de cada guany sobre la resposta del sistema:
@@ -1465,6 +1470,8 @@ En aquest cas, i a diferència de la resposta en llaç obert, el sistema és cap
 
 ## 4. Controlador LQR
 
+### 4.1 Introducció al control òptim
+
 Un controlador LQR és un regulador òptim per a sistemes lineals en espai d’estats que calcula automàticament el guany de realimentació $K$ per estabilitzar el sistema amb un compromís entre precisió i esforç de control. Funciona triant l’entrada de control $u=-Kx$, de manera que la dinàmica en bucle tancat passa de $A$ a $A-BK$, i el guany $K$ es calcula minimitzant una funció de cost quadràtica. Esquemàticament, el controlador LQR es pot representar de la següent manera:
 
 <div class="image-row">
@@ -1477,69 +1484,68 @@ Un controlador LQR és un regulador òptim per a sistemes lineals en espai d’e
 LQR és una llei de control òptim que utilitza un índex de rendiment quadràtic, o funció de cost, per trobar els factors de ponderació òptims $Q$ i $R$ i obtenir la matriu de guany LQR $K$. Per a un sistema lineal invariant en el temps, una llei de control òptima busca una entrada que permeti al sistema seguir una trajectòria òptima predeterminada i, al mateix temps, minimitzar la funció de cost. La dinàmica del sistema s’expressa com: 
 
 $$
-\dot{x}=g(x(t),u(t),t)
+    \dot{x}=g(x(t),u(t),t)
 $$
 
 Per al control òptim, el sistema requereix una funció de cost o criteri de rendiment:ç
 
 $$
-J=\int_{t_0}^{t_1} h(x(t),u(t),t)\,dt
+   J=\int_{t_0}^{t_1} h(x(t),u(t),t)\,dt
 $$
 
 L’equació de Hamilton-Jacobi es pot resoldre utilitzant un criteri de rendiment quadràtic per obtenir els paràmetres necessaris per calcular un guany òptim $K$.
 Definint la funció següent:
 
 $$
-f(x,t)=\min \int_{t_0}^{t_1} h(x,u)\,dt
+   f(x,t)=\min \int_{t_0}^{t_1} h(x,u)\,dt
 $$
 
 l’equació de Hamilton-Jacobi pren la forma:
 
 $$
-\frac{\partial f}{\partial t}
-=
--\min \left[
-h(x,u)+
-\left(\frac{\partial f}{\partial x}\right)^T g(x,u)
-\right]
+    \frac{\partial f}{\partial t}
+    =
+    -\min \left[
+    h(x,u)+
+    \left(\frac{\partial f}{\partial x}\right)^T g(x,u)
+    \right]
 $$
 
 Si l’equació és quadràtica, l’índex de rendiment quadràtic es pot escriure com:
 
 $$
-J=\int_{0}^{\infty}
-\left(
-x^TQx+u^TRu
-\right)dt
+    J=\int_{0}^{\infty}
+    \left(
+    x^TQx+u^TRu
+    \right)dt
 $$
 
 Substituint les equacions, s’obté: 
 $$
-\frac{\partial f}{\partial t}
-=
--\min \left[
-x^TQx+u^TRu+
-\left(\frac{\partial f}{\partial x}\right)^T(Ax+Bu)
-\right]
+    \frac{\partial f}{\partial t}
+    =
+    -\min \left[
+    x^TQx+u^TRu+
+    \left(\frac{\partial f}{\partial x}\right)^T(Ax+Bu)
+    \right]
 $$
 
 Un cop trobat el guany LQR, la nova entrada de control es defineix com:
 
 $$
-u=-Kx
-\tag{4.7}
+    u=-Kx
 $$
 
 on $K$ es defineix com:
 
 $$
-K=R^{-1}B^TP
+    K=R^{-1}B^TP
 $$
 
 i la matriu $P$ s’obté resolent l’equació algebraica de Riccati: 
 
 $$
-PA+A^TP+Q-PBR^{-1}B^TP=0
+   PA+A^TP+Q-PBR^{-1}B^TP=0
 $$
 
 Com que totes les altres matrius són conegudes o han estat definides prèviament, la solució del guany LQR es pot calcular directament. 
@@ -1547,22 +1553,71 @@ Com que totes les altres matrius són conegudes o han estat definides prèviamen
 Les matrius $Q$ i $R$ són matrius simètriques definides positives de dimensions $l \times l$ i $m \times m$, respectivament, i representen els pesos assignats als estats i a les entrades del sistema. Si observem la funció de cost:
 
 $$
-J=\int_{0}^{\infty}
-\left(
-x^TQx+u^TRu
-\right)dt
+    J=\int_{0}^{\infty}
+    \left(
+    x^TQx+u^TRu
+    \right)dt
 $$
 
-els paràmetres es poden configurar de manera independent per assolir una solució òptima. En el cas del pèndol invertit, la matriu $Q$ està relacionada amb la posició del carro, l’angle del pèndol, la velocitat del carro i la velocitat angular del pèndol. Quan s’incrementa o es redueix algun valor de $Q$, els estats es veuen més o menys afectats segons el pes assignat a cadascun d’ells. De manera similar, el valor de $R$ afecta l’entrada de control del sistema, que en aquest cas és la força aplicada al carro, o bé la tensió si el model d’actuació s’ha definit en termes elèctrics. Aquest valor es pot ajustar segons els objectius del dissenyador o segons les limitacions físiques de l’actuador. 
-En el model del pèndol invertit, la selecció de $Q$ i $R$ també es pot fer per prova i error fins a trobar una resposta temporal adequada. 
+Les matrius $Q$ i $R$ es poden ajustar de manera independent per definir el compromís desitjat entre qualitat de la regulació i esforç de control.  En el cas del pèndol invertit, la matriu $Q$ pondera els estats del model linealitzat, és a dir, la posició del carro, l’angle del pèndol, la velocitat del carro i la velocitat angular del pèndol. Quan augmenta el pes associat a un estat dins de $Q$, la funció de cost penalitza més les desviacions d’aquella variable i el controlador tendeix a corregir-la amb més intensitat. 
+De manera anàloga, la matriu $R$ pondera la variable de control.
+Si el model s’ha formulat amb voltatge com a entrada, aleshores $R$ penalitza la tensió aplicada al motor, de manera que valors elevats de $R$ tendeixen a limitar l’amplitud del senyal de control i produeixen una resposta més suau.  En canvi, valors més petits de $R$ permeten una actuació més agressiva, a costa d’un ús més intens de l’actuador.
 
-```matlab
-Q = diag([q1 q2 q3 q4]);
-R = r;
+Tanmateix, les matrius $Q$ i $R$ no proporcionen directament el guany del controlador. Un cop fixades aquestes ponderacions, el problema LQR es resol mitjançant l’equació algebraica de Riccati, la qual permet calcular la matriu $P$. A partir d’aquesta solució, el guany òptim s’obté com $K=R^{-1}B^TP$, on les matrius $A$ i $B$ corresponen al model final del sistema, en aquest cas formulat amb voltatge com a entrada.
+
+En el nostre cas, les matrius $Q$ i $R$ s’han determinat a partir d’un procés iteratiu de sintonització sobre el model linealitzat del pèndol invertit amb voltatge com a entrada. S’ha pres com a punt de partida una matriu $Q$ diagonal i un valor escalar de $R$, utilitzant com a referència l’exemple del material docent, i posteriorment s’han ajustat aquests pesos en funció de l’estabilització de l’angle, del desplaçament del carro i del nivell de voltatge requerit per l’actuador.
+
+En MATLAB, la funció `lqr` permet calcular directament el guany $K$ a partir de les matrius $A$, $B$, $Q$ i $R$. Per al model del pèndol invertit, s’han seleccionat les següents matrius de ponderació:
+
+```m
+Q = diag([q1 q2 q3 q4]);   % pesos dels estats
+R = r;                     % pes del voltatge d'entrada
 K = lqr(A,B,Q,R);
 ```
 
-<div class="page-break"></div>
+En aquest codi, la funció `lqr(A,B,Q,R)` resol internament l’equació algebraica de Riccati associada al sistema i retorna el guany òptim $K$. En aquest cas, s’han seleccionat els pesos següents:
+
+$$
+    Q = \begin{bmatrix}
+    1200 & 0 & 0 & 0 \\\\
+    0 & 1500 & 0 & 0 \\\\
+    0 & 0 & 0 & 0 \\\\
+    0 & 0 & 0 & 0
+    \end{bmatrix},
+    \qquad
+    R = 0.05
+$$
+
+### 4.2 Simulació del sistema no linealitzat amb el controlador LQR en Simulink
+
+Un cop obtingut el guany $K$, s’ha implementat el controlador LQR al model no linealitzat del pèndol invertit a Simulink. En aquesta implementació, el bloc del pèndol invertit representa la planta i proporciona com a sortides els estats $x$, $\theta$, $\dot{x}$ i $\dot{\theta}$, dels quals escollim la posició del carro i l’angle del pèndol per construir el senyal d’error respecte de l’estat desitjat; aquest error s’introdueix en un bloc de producte on es multiplica pel guany $K$ per generar la comanda de control. El model en Simulink amb el controlador LQR es mostra a continuació:
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/model_lqr.png" alt="Model en Simulink amb controlador LQR" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Model en Simulink amb controlador LQR.</div>
+  </div>
+</div>
+
+Partint de les mateixes condicions inicials que en el cas del PID, és a dir, $\theta = \pi - (\pi * 0.1)$ com a condició inicial per a l’angle del pèndol i $x = 0.2$ com a condició inicial per a la posició del carro, s’obté la següent resposta:
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/resultats_lqr.png" alt="Resposta del sistema amb controlador LQR" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Resposta del sistema amb controlador LQR.</div>
+  </div>
+</div>
+
+El voltatge consumit per aquest model és, si limitem el motor a un voltatge màxim de 10V, el següent:
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/voltatge_lqr.png" alt="Voltatge consumit pel controlador LQR" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Voltatge consumit pel controlador LQR.</div>
+  </div>
+</div>
+
+És a dir, amb un guany LQR ben ajustat, el sistema és capaç d’estabilitzar-se al voltant del punt d’equilibri vertical, amb una resposta ràpida i amb un voltatge màxim de 10V. En comparació amb el controlador PID, el LQR mostra una resposta més suau i menys oscil·lacions inicials, a costa d’un ús més intensiu de l’actuador en els primers instants.
 
 ## 5. Filtre de Kalman
 
@@ -1749,6 +1804,170 @@ implementaico de tot junt: controlador LQR + filtre de Kalman i executar i veure
 ## 7. Extensions
 
 ### 7.1 Primera extensió
+
+En aquesta extensió s’ha estudiat com afecta al comportament del pèndol invertit la presència de diferents nivells de fricció en el desplaçament horitzontal de la plataforma. El model dinàmic base ja incorpora un terme de fricció viscosa associat al moviment del carro, representat pel coeficient $c$, que en el sistema utilitzat té valor $c = 0.63$ i apareix a les equacions del moviment com una força oposada a la velocitat $\dot{x}$. L’objectiu d’aquesta extensió no és substituir el model original, sinó ampliar-lo amb una contribució addicional que permeti representar diferents condicions equivalents de contacte entre la plataforma i la superfície de desplaçament. Aquesta hipòtesi és coherent amb el model ja emprat, ja que es manté la idea de fricció viscosa lineal i no s’introdueixen no linealitats addicionals que compliquin innecessàriament l’anàlisi i la simulació.
+
+Per modelar aquest efecte s’ha afegit una força externa de fregament proporcional a la velocitat del carro i en direcció contrària al moviment, definida com $F_f = -c_f \dot{x}$, on $c_f$ on $c_f$ és un nou coeficient de fricció addicional. D’aquesta manera, la força total resistiva associada al moviment de la plataforma es pot interpretar com la suma de la fricció base del model i la fricció afegida en aquesta extensió:
+
+$$
+    F_{\text{total}} = -c \dot{x} - c_f \dot{x} = -(c + c_f) \dot{x}
+$$
+
+A nivell físic, aquesta extensió es pot entendre com una representació simplificada de superfícies amb diferents graus de resistència al moviment. No es pretén descriure amb detall el contacte real entre rodes, guies o superfícies, sinó estudiar de manera controlada com una variació de la fricció afecta l’estabilització del sistema, la resposta i l’esforç de control necessari per mantenir el pèndol prop de la posició invertida.
+
+#### 7.1.1 Implementació del model
+
+La implementació s’ha realitzat en Simulink afegint un bloc extern que genera la força de fricció $F_f$ a partir de la velocitat de la plataforma. Per fer-ho, s’ha pres la variable $\dot{x}$ de la sortida del model, s’ha multiplicat pel guany $-c_f$ i el resultat s’ha incorporat al sumatori de forces d’entrada del sistema, de manera que la fricció afegida sempre actua oposant-se al sentit del moviment. Aquesta forma d’implementació permet mantenir intacte el model base i, al mateix temps, variar de manera senzilla el nou paràmetre $c_f$. Això facilita la comparació entre diferents escenaris, ja que l’únic element que canvia entre simulacions és la magnitud de la fricció afegida. El model en Simulink amb la fricció addicional es mostra a continuació:
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/model_friccio.png" alt="Model en Simulink amb fricció addicional" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Model en Simulink amb fricció addicional.</div>
+  </div>
+</div>
+
+Els valors de $c_f$ seleccionats per a les simulacions han estat:
+
+<div class="table-container">
+  <div class="table-title">Valors escollits del coeficient de fricció addicional</div>
+  <table style="width: 260px; table-layout: fixed;">
+    <colgroup>
+      <col style="width: 90px;">
+      <col style="width: 170px;">
+    </colgroup>
+    <thead>
+      <tr>
+        <th><math><msub><mi>c</mi><mi>f</mi></msub></math></th>
+        <th>Justificació</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>0</td>
+        <td>cas base</td>
+      </tr>
+      <tr>
+        <td>0.3</td>
+        <td>fricció baixa</td>
+      </tr>
+      <tr>
+        <td>0.63</td>
+        <td>mateixa magnitud (doble)</td>
+      </tr>
+      <tr>
+        <td>1.26</td>
+        <td>doble magnitud (triple)</td>
+      </tr>
+      <tr>
+        <td>5</td>
+        <td>cas extrem</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="table-caption">Taula X. Valors del coeficient de fricció addicional <math><msub><mi>c</mi><mi>f</mi></msub></math> utilitzats a l’extensió del model.</div>
+</div>
+
+#### 7.1.2 Resultats 
+
+Pel cas base, és a dir, sense fricció addicional ($c_f = 0$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_01.png" alt="Resposta del sistema sense fricció addicional">
+    <div class="caption">Figura X: Resposta del sistema sense fricció addicional.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_02.png" alt="Resposta del sistema amb fricció addicional elevada">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional</div>
+  </div>
+</div>
+
+Aquest és el cas base. Veiem que la posició del carro $x$ presenta un petit desplaçament inicial, però convergeix cap a $0$, mentre que l’angle $\theta$ tendeix cap als $180^\circ$, que és la posició invertida de referència. També es veu que tant la velocitat $\dot{x}$ com la velocitat angular $\dot{\theta}$ tenen un pic transitori al començament i després decauen fins a valors propers a zero, cosa que indica que el pèndol s'estabilitza. A la gràfica de voltatge també s’observa una acció inicial intensa, necessària per corregir ràpidament la desviació inicial, seguida d’una disminució progressiva fins a pràcticament zero. En conjunt, el cas base mostra una resposta ràpida, amb un sobreimpuls moderat, però amb bona estabilització final.
+
+Pel cas amb fricció addicional baixa ($c_f = 0.3$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_03.png" alt="Resposta del sistema amb fricció addicional baixa">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional baixa.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_04.png" alt="Resposta del sistema amb fricció addicional baixa">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional baixa</div>
+  </div>
+</div>
+
+En comparació amb el cas base, aquest cas mostra un comportament molt similar i no s’hi observen canvis qualitatius importants en l’estabilització del sistema. El controlador continua portant la posició del carro cap a $0$ i l’angle cap als $180^\circ$ en un temps semblant, mantenint un transitori inicial i una estabilització final correctes.
+
+Pel cas amb fricció addicional mitjana, sent el doble del coeficient de fricció base ($c_f = 0.63$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_05.png" alt="Resposta del sistema amb fricció addicional elevada">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional elevada.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_06.png" alt="Resposta del sistema amb fricció addicional elevada">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional elevada</div>
+  </div>
+</div>
+
+En comparació amb el cas base, aquest cas continua estabilitzant correctament el sistema i manté una resposta molt semblant en la posició, l’angle i les seves derivades, sense canvis qualitatius importants en la convergència final. La diferència més clara apareix en l’acció del motor, ja que el pic negatiu de voltatge es redueix respecte del cas base i passa a situar-se al voltant de $-8$ V, cosa que indica una menor demanda instantània de voltatge a l'inici. Això suggereix que, en aquest cas amb fricció addicional de doble magnitud, aquesta, ajuda a esmorteir parcialment la resposta inicial i fa que el controlador no necessiti una correcció tan agressiva com en el cas base. Tot i aquesta reducció en el pic de voltatge, el sistema conserva una bona estabilització final, amb $x \to 0$, $\theta \to 180^\circ$ i velocitats finals properes a zero.
+
+Pel cas amb fricció addicional més elevada, sent el triple del coeficient de fricció base ($c_f = 1.26$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_07.png" alt="Resposta del sistema amb fricció addicional més elevada">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional més elevada.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_08.png" alt="Resposta del sistema amb fricció addicional més elevada">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional més elevada</div>
+  </div>
+</div>
+
+En aquest cas, el sistema continua estabilitzant-se correctament i es torna a observar una reducció del voltatge màxim requerit en el transitori inicial. Aquest fet confirma que l’augment de la fricció ajuda a esmorteir la resposta i redueix l’esforç instantani que ha de fer el controlador per corregir la desviació inicial. Per tant, la fricció continua sent beneficiosa, ja que no empitjora apreciablement el temps d’estabilització, però sí que redueix la demanda instantània de voltatge i la velocitat necessària durant el transitori inicial si es compara amb el cas base.
+
+Pel cas amb fricció addicional extrema ($c_f = 5$):
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_09.png" alt="Resposta del sistema amb fricció addicional extrema">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional extrema.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_10.png" alt="Resposta del sistema amb fricció addicional extrema">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional extrema</div>
+  </div>
+</div>
+
+Aquí el comportament canvia radicalment, perquè el sistema ja no convergeix cap a l’equilibri desitjat sinó que manté una oscil·lació persistent i un desplaçament continu del carro. La posició $x$ creix gairebé de manera monòtona al llarg de tota la simulació, l’angle $\theta$ oscil·la amb una amplitud encara apreciable, i la velocitat $\dot{x}$ no decau cap a zero sinó que es manté al voltant d’un valor positiu. Això contrasta amb la resta de casos, on el controlador aconseguia portar el sistema cap a $x=0$, $\theta=180^\circ$ i velocitats finals pròximes a zero en pocs segons. La gràfica de voltatge ho reforça encara més, perquè el voltatge queda constant al valor màxim, al voltant de $10$ V, durant tota la simulació. Això indica que el controlador està treballant en saturació i que, fins i tot aplicant l’acció màxima, no és capaç de recuperar una estabilització comparable a la del cas base. Provem de donar-li un motor més potent, amb un voltatge màxim de 24V:
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/ext1_11.png" alt="Resposta del sistema amb fricció addicional extrema i motor més potent">
+    <div class="caption">Figura X: Resposta del sistema amb fricció addicional extrema i motor més potent.</div>
+  </div>
+
+  <div class="image-column">
+    <img src="./images/ext1_12.png" alt="Voltatge del sistema amb fricció addicional extrema i motor més potent">
+    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional extrema i motor més potent</div>
+  </div>
+</div>
+
+En augmentar la tensió màxima disponible del motor fins a $24$ V, el sistema aconsegueix tornar a estabilitzar-se. Això mostra que la pèrdua de rendiment observada en el cas anterior estava fortament relacionada amb la saturació de l’acció de control, ja que el límit de tensió disponible no era suficient per generar la força requerida. Amb un marge més gran d’actuació, el controlador recupera la capacitat de portar el carro i el pèndol cap a l’equilibri desitjat, amb un comportament similar al cas base.
+
+### 7.1.3 Conclusions de la primera extensió
+
+Aquesta extensió mostra que una fricció addicional moderada no perjudica l’estabilització del sistema i, fins i tot, pot ajudar a esmorteir la resposta inicial i reduir la demanda instantània de voltatge del motor. En canvi, quan la fricció és massa elevada, el controlador deixa de tenir prou autoritat de control i el sistema entra en saturació, perdent la capacitat d’estabilitzar-se amb el límit de tensió inicial.
+
+Des d’un punt de vista industrial, aquest resultat és important perquè molts sistemes reals treballen sobre superfícies amb resistències al moviment diferents. Si el sistema ha de funcionar sobre terres més durs o amb més fregament, cal preveure un actuador amb més marge de tensió o parell, i possiblement reajustar el controlador; en canvi, amb superfícies més favorables, el sistema pot estabilitzar-se correctament amb menys esforç de control.
 
 ### 7.2 Segona extensió
 

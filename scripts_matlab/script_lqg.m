@@ -1,6 +1,3 @@
-% =========================================================================
-% INIT_LQG.m - Controlador complet Linear Quadratic Gaussian (LQR + Kalman)
-% =========================================================================
 clear all; clc;
 
 % ==========================================
@@ -41,9 +38,9 @@ nn = (m * l * kt) / (alpha * Rm * r);
 A = [0,  0,   1,   0 ;
     0,  0,   0,   1 ;
     0,  aa, -bb, -cc ;
-    0,  dd, -ee, -ff ]
+    0,  dd, -ee, -ff ];
 
-B = [0 ; 0 ; mm ; nn]
+B = [0 ; 0 ; mm ; nn];
 C = eye(4);
 D = zeros(4, 1);
 n = 4; % Nombre d'estats
@@ -53,20 +50,20 @@ n = 4; % Nombre d'estats
 % ==========================================
 Q = diag([1200 1500 0 0]);      % Pesos dels estats
 R_lqr = 0.05;                   % Cost de l'esforç de control
-KK = lqr(A, B, Q, R_lqr)        % Guany de realimentació
+KK = lqr(A, B, Q, R_lqr);       % Guany de realimentació
 
-eig(A - B*KK)   % tots els valors propis han de tenir part real negativa
+eig(A - B*KK)   % valors propis
 
 % ==========================================
 % 4. DISSENY DE L'ESTIMADOR ÒPTIM (FILTRE DE KALMAN)
 % ==========================================
 Vd = 0.001 * eye(n);   
 Vn = 0.001 * eye(n);
-L = lqr(A', C', Vd, Vn)'       % Guany de Kalman (problema dual)
+L = lqr(A', C', Vd, Vn)';       % Guany de Kalman 
 
 eig(A - L*C)
 
-% Matrius de l'observador per al bloc State-Space
+% Matrius de l'observador
 Akf = A - L*C;
 Bkf = [B, L];
 Ckf = eye(4);

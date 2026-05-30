@@ -58,14 +58,6 @@ fprintf('Matriu A calculada:\n');  disp(A)
 fprintf('Vector B calculat:\n');   disp(B)
 
 % ==========================================
-% COMPROVACIÓ: CONTROLABILITAT I OBSERVABILITAT
-% ==========================================
-rank_ctrb = rank(ctrb(A, B));
-rank_obsv = rank(obsv(A, C));
-fprintf('Rank controlabilitat: %d / %d\n', rank_ctrb, n);
-fprintf('Rank observabilitat:  %d / %d\n', rank_obsv, n);
-
-% ==========================================
 % ESTIMADOR — FILTRE DE KALMAN
 % ==========================================
 
@@ -74,10 +66,25 @@ fprintf('Rank observabilitat:  %d / %d\n', rank_obsv, n);
 Vd = 0.001 * eye(n);   
 Vn = 0.001 * eye(n);
 
-% Guany de Kalman L via problema dual del LQR:
-%   min J = ∫(e'·Vd·e + ν'·Vn·ν)dt  →  L = lqr(A',C',Vd,Vn)'
+% Guany de Kalman L:
 L = lqr(A', C', Vd, Vn)';
-fprintf('Guany Kalman L:\n'); disp(L)
 
-% Verificació: valors propis de l'observador
+% ==========================================
+% EXTENSIÓ 2: VARIACIÓ DE Vd i Vn
+% ==========================================
+casos = {0.001, 0.001;   % cas base
+         0.1,   0.001;   % model incert
+         0.001, 0.1;     % sensors sorollosos
+         10,    0.001;   % model molt incert
+         0.001, 10};     % sensors molt sorollosos
+
+for i = 1:5
+    Vd_i = casos{i,1} * eye(n);
+    Vn_i = casos{i,2} * eye(n);
+    L_i  = lqr(A', C', Vd_i, Vn_i)';
+    fprintf('Cas %d — Guany Kalman L_i:\n', i); disp(L_i)
+    fprintf('Cas %d — eigs(A-LC): ', i);
+    disp(eig(A - L_i*C)')
+end
 fprintf('Valors propis A-LC: '); disp(eig(A - L*C)')
+

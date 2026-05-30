@@ -1623,11 +1623,13 @@ El voltatge consumit per aquest model és, si limitem el motor a un voltatge mà
 
 És a dir, amb un guany LQR ben ajustat, el sistema és capaç d’estabilitzar-se al voltant del punt d’equilibri vertical, amb una resposta ràpida i amb un voltatge màxim de 10V. En comparació amb el controlador PID, el LQR mostra una resposta més suau i menys oscil·lacions inicials, a costa d’un ús més intensiu de l’actuador en els primers instants.
 
+<div class="page-break"></div>
+
 ## 5. Filtre de Kalman
 
 En les aplicacions reals de control, no sempre és possible mesurar directament tots els estats del sistema. A més, les mesures disponibles solen estar contaminades per soroll de sensor, i el model matemàtic del sistema conté incerteses degudes a pertorbacions externes o a simplificacions del model físic. En aquestes condicions, el controlador LQR dissenyat a l'apartat anterior no es pot aplicar directament, ja que requereix el coneixement de tots els estats. Per resoldre aquest problema s'introdueix el **Filtre de Kalman**, un estimador òptim que, a partir de l'entrada de control i les mesures disponibles —ambdues contaminades per soroll—, reconstrueix una estimació dels estats del sistema que minimitza l'error quadràtic mig de l'estimació.
 
-### 5.1 Fonaments teòrics
+### 5.1 Introducció al Filtre de Kalman
 
 Suposem que tenim un estat estimat $\hat{x}$ que pretén reproduir el vector d'estat real $x$. Si el sistema és:
 
@@ -1662,6 +1664,13 @@ $$
 $$
 
 i es pot fer asimptòticament estable escollint $L$ adequadament. Aquesta estructura es denomina **observador d'ordre complet**.
+
+<div class="image-row">
+  <div class="image-column">
+    <img src="./images/observador_ordre_complet_Kalman.jpg" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Diagrama observador d'ordre complet.</div>
+  </div>
+</div>
 
 Per al Filtre de Kalman, que és un estimador òptim respecte d'un observador genèric, el model del sistema inclou explícitament els termes de soroll:
 
@@ -1719,7 +1728,7 @@ on `Vd` és la covariança del soroll de procés ($Q_N$) i `Vn` és la covarian�
 
     Les matrius de covariança $Q_N$ i $R_N$ regulen el compromís entre confiar en el model del sistema o en les mesures dels sensors. Valors grans de $Q_N$ indiquen un model incert i forcen l'estimador a seguir les mesures. Valors grans de $R_N$ indiquen sensors sorollosos i forcen l'estimador a confiar més en la predicció del model.
 
-    En la implementació d'aquest treball, s'han adoptat valors iguals i moderats per a ambdues matrius, reflectint un nivell de confiança equivalent en el model i en els sensors:
+    En la implementació d'aquest treball, les covariàncies del soroll de procés i de mesura s’han inicialitzat amb matrius diagonals identitat i s’han ajustat empíricament fins obtenir una estimació estable. La configuració final escollida assumeix un nivell de confiança equivalent en el model i en els sensors:
 
     $$
         Q_N = 0.001 \cdot I_4, \qquad R_N = 0.001 \cdot I_4
@@ -1727,8 +1736,7 @@ on `Vd` és la covariança del soroll de procés ($Q_N$) i `Vn` és la covarian�
 
     ```matlab
     Vd = 0.001 * eye(n);   % Covariança del soroll de procés
-    Vn = 0.001 * eye(4);   % Covariança del soroll de mesura
-    L  = lqr(A', C', Vd, Vn)';
+    Vn = 0.001 * eye(n);   % Covariança del soroll de mesura
     ```
 
 3. Guany de Kalman obtingut:
@@ -1763,8 +1771,8 @@ El diagrama implementat a Simulink per a l'etapa del Filtre de Kalman s'il·lust
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/diagrama_kalman.jpg" alt="Diagrama Simulink del Filtre de Kalman" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Diagrama Simulink de l'estimació d'estat amb el Filtre de Kalman. La planta no lineal rep com a entrada la força generada pel subsistema <code>Voltage_to_Force</code>. Les sortides s'afegeix soroll de mesura i de procés i s'introdueix al bloc <code>Kalman Filter</code>, que reconstrueix els quatre estats estimats $\hat{x}$, $\hat{\theta}$, $\hat{\dot{x}}$ i $\hat{\dot{\theta}}$.</div>
+    <img src="./images/model_kalman.jpg" alt="Diagrama Simulink del Filtre de Kalman" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Diagrama Simulink de l'estimació d'estat amb el Filtre de Kalman. La planta no lineal rep com a entrada la força generada pel subsistema <code>Voltage_to_Force</code>. Les sortides s'afegeix soroll de mesura i de procés i s'introdueix al bloc <code>Kalman Filter</code>, que reconstrueix els quatre estats estimats del sistema.</div>
   </div>
 </div>
 
@@ -1781,12 +1789,33 @@ Les condicions inicials del sistema per a la simulació han estat $x_0 = [0.2,\;
 
 ### 5.4 Resultats de la simulació
 
-La resposta de la simulació es mostra a la figura següent, on per a cada estat s'ha representat en vermell el valor real i en blau el valor estimat pel Filtre de Kalman.
+La resposta de la simulació es presenta en quatre figures independents, una per a cada estat del sistema. En totes elles es mostra en vermell el valor real i en blau l'estimació obtinguda amb el Filtre de Kalman.
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/output_kalman.jpg" alt="Resultats del Filtre de Kalman" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats del sistema: posició del carro $x$, angle del pèndol $\theta$, velocitat del carro $\dot{x}$ i velocitat angular del pèndol $\dot{\theta}$. Simulació de 10 s amb condicions inicials $x_0 = [0.2,\; 0.9\pi,\; 0,\; 0]^T$ i soroll de procés i de mesura amb covariança $0.001\,I_4$.</div>
+    <img src="./images/kalman_1.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la posició del carro" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la posició del carro x.</div>
+  </div>
+</div>
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/kalman_2.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a l'angle del pèndol" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a l'angle del pèndol θ.</div>
+  </div>
+</div>
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/kalman_3.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la velocitat del carro" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat del carro ẋ.</div>
+  </div>
+</div>
+
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/kalman_4.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la velocitat angular del pèndol" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat angular del pèndol.</div>
   </div>
 </div>
 
@@ -1797,13 +1826,15 @@ S'observa que, en tots quatre estats, l'estimació del Filtre de Kalman segueix 
 - **Velocitat del carro $\dot{x}$**: l'estimació segueix amb notable fidelitat la trajectòria real un cop superat el transitori inicial. El soroll de mesura és visible a la corba real.
 - **Velocitat angular $\dot{\theta}$**: d'entre tots els estats, és el que presenta el transitori inicial de major amplitud. Malgrat això, a partir de $t \approx 4\,\text{s}$ l'estimació convergeix bé al valor real.
 
-En conjunt, els resultats confirmen que el Filtre de Kalman dissenyat és capaç d'estimar satisfactòriament l'estat del pèndol invertit en presència de soroll tant de procés com de mesura. El transitori inicial s'explica per la diferència entre les condicions inicials reals del sistema ($x_0 \neq 0$) i les condicions inicials de l'estimador, que s'inicialitza a zero. Un cop transcorregut aquest transitori, l'estimador s'adap a la trajectòria real i la segueix amb un error reduït. Això és precisament la base que permetrà, a l'apartat següent, combinar l'estimador amb el controlador LQR per obtenir el controlador LQG complet.
+En conjunt, els resultats confirmen que el Filtre de Kalman dissenyat és capaç d'estimar satisfactòriament l'estat del pèndol invertit en presència de soroll tant de procés com de mesura. El transitori inicial s'explica per la diferència entre les condicions inicials reals del sistema ($x_0 \neq 0$) i les condicions inicials de l'estimador, que s'inicialitza a zero. Un cop transcorregut aquest transitori, l'estimador s'adapta a la trajectòria real i la segueix amb un error reduït. Això és precisament la base que permetrà, a l'apartat següent, combinar l'estimador amb el controlador LQR per obtenir el controlador LQG complet.
 
 <div class="page-break"></div>
 
 ## 6. Controlador LQG
 
 implementaico de tot junt: controlador LQR + filtre de Kalman i executar i veure resultats
+
+<div class="page-break"></div>
 
 ## 7. Extensions
 
@@ -1973,7 +2004,11 @@ Aquesta extensió mostra que una fricció addicional moderada no perjudica l’e
 
 Des d’un punt de vista industrial, aquest resultat és important perquè molts sistemes reals treballen sobre superfícies amb resistències al moviment diferents. Si el sistema ha de funcionar sobre terres més durs o amb més fregament, cal preveure un actuador amb més marge de tensió o parell, i possiblement reajustar el controlador; en canvi, amb superfícies més favorables, el sistema pot estabilitzar-se correctament amb menys esforç de control.
 
+<div class="page-break"></div>
+
 ### 7.2 Segona extensió
+
+<div class="page-break"></div>
 
 ## 8. Conclusions
 

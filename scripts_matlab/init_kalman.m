@@ -66,22 +66,13 @@ fprintf('Rank controlabilitat: %d / %d\n', rank_ctrb, n);
 fprintf('Rank observabilitat:  %d / %d\n', rank_obsv, n);
 
 % ==========================================
-% CONTROLADOR LQR
-% ==========================================
-% Q penalitza l'error d'estat: [x, θ, ẋ, θ̇]
-% R penalitza l'esforç de control (tensió)
-
-% ==========================================
 % ESTIMADOR — FILTRE DE KALMAN
 % ==========================================
-
-% Condicions inicials
-x0 = [0.2; pi - pi*0.1; 0; 0];
 
 % Vd: covariança del soroll de procés  (incertesa del model)
 % Vn: covariança del soroll de mesura  (incertesa dels sensors)
 Vd = 0.001 * eye(n);   
-Vn = 0.001 * eye(4);
+Vn = 0.001 * eye(n);
 
 % Guany de Kalman L via problema dual del LQR:
 %   min J = ∫(e'·Vd·e + ν'·Vn·ν)dt  →  L = lqr(A',C',Vd,Vn)'

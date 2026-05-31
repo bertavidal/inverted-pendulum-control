@@ -118,7 +118,7 @@ pre code {
   width: 100%;
 }
 
-/* MODIFICAT: Reduïm la base (flex-basis) a 180px perquè hi capiguin 3 en una fila */
+/* MODIFICAT: Reduïm la base (flex-basis) a 180px perquè hi capiguen 3 en una fila */
 .image-column {
   flex: 1 1 180px;
   max-width: 5000px;
@@ -259,7 +259,7 @@ pre code {
   width: 100%;
   max-width: 100%;
   border-collapse: collapse;
-  font-size: 7pt;
+  font-size: 8pt;
   margin: 0 auto;
   background-color: #fff;
 }
@@ -274,7 +274,7 @@ pre code {
   padding: 6px 4px;
   text-align: center;
   border: 1px solid #888;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 /* Files de dades */
@@ -282,11 +282,11 @@ pre code {
   padding: 5px 4px;
   text-align: center;
   border: 1px solid #aaa;
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 .table-container td code {
-  font-size: 7pt;
+  font-size: 8pt;
 }
 
 /* Files alternades (zebra striping) */
@@ -300,7 +300,6 @@ pre code {
   font-size: 8pt;
   text-align: center;
   color: #555;
-  font-style: italic;
 }
 
 /* Estil alternatiu: caption sobre la taula */
@@ -394,7 +393,7 @@ a[href^="#bib"]:hover {
 - [2. Model del pèndol](#2-model-del-pèndol)
   - [2.1 Equacions del moviment](#21-equacions-del-moviment)
   - [2.2 Model no lineal](#22-model-no-lineal)
-  - [2.3 Linearització](#23-linearització)
+  - [2.3 Linealització](#23-linealització)
   - [2.4 Model en espai d’estats, controlabilitat, observabilitat i estabilitat](#24-model-en-espai-destats-controlabilitat-observabilitat-i-estabilitat)
 - [3. PID](#3-pid)
   - [3.1 Introducció al control clàssic](#31-introducció-al-control-clàssic)
@@ -451,7 +450,7 @@ En la següent fase, s'emprarà MATLAB i Simulink per dissenyar un regulador LQR
 
 ## 2. Model del pèndol
 
-Primer de tot, definim la nomenclatura i les unitats que s’utilitzaran al llarg del model dinàmic del pèndol invertit sobre carro. Aquesta taula serveix com a referència per a totes les expressions que apareixeran més endavant i ajuda a mantenir una notació clara i coherent durant tota la secció.
+Primer de tot, definim la nomenclatura i les unitats que s’utilitzaran al llarg del model dinàmic del pèndol invertit sobre carro:
 
 <div class="table-container">
   <div class="table-title">Nomenclatura del model del pèndol invertit sobre carro</div>
@@ -574,49 +573,9 @@ Primer de tot, definim la nomenclatura i les unitats que s’utilitzaran al llar
         <td>Valor de <math><mi>Δ</mi></math> al punt d’equilibri de linealització</td>
         <td>kg<sup>2</sup>·m<sup>2</sup></td>
       </tr>
-      <tr>
-        <td><math><mi mathvariant="bold">x</mi></math></td>
-        <td>Vector d’estat del sistema</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td><math><mi mathvariant="bold">y</mi></math></td>
-        <td>Vector de sortida del sistema</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td><math><mi>A</mi></math></td>
-        <td>Matriu d’estat del model linealitzat</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td><math><mi>B</mi></math></td>
-        <td>Matriu d’entrada del model linealitzat</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td><math><mi>C</mi></math></td>
-        <td>Matriu de sortida</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td><math><mi>D</mi></math></td>
-        <td>Matriu de transmissió directa</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td><math><mi mathvariant="script">C</mi></math></td>
-        <td>Matriu de controlabilitat</td>
-        <td>-</td>
-      </tr>
-      <tr>
-        <td><math><mi mathvariant="script">O</mi></math></td>
-        <td>Matriu d’observabilitat</td>
-        <td>-</td>
-      </tr>
     </tbody>
   </table>
-  <div class="table-caption">Taula 1. Nomenclatura i unitats utilitzades en el model dinàmic del pèndol invertit sobre carro.</div>
+  <div class="table-caption">Taula 1: Nomenclatura i unitats utilitzades en el model dinàmic del pèndol invertit sobre carro.</div>
 </div>
 
 ### 2.1 Equacions del moviment
@@ -821,7 +780,7 @@ $$
 
 Aquesta expressió és el model no lineal complet del sistema. És la forma adequada per simular la dinàmica real del pèndol, però no és la més pràctica per aplicar tècniques de control lineal com LQR o LQG. Per aquest motiu, el pas següent és linealitzar el sistema al voltant d’un punt d’equilibri.
 
-### 2.3 Linearització
+### 2.3 Linealització
 
 Les equacions del moviment no lineals obtingudes anteriorment descriuen correctament la dinàmica del pèndol invertit, però encara no són adequades per al disseny d’un controlador lineal. Per aquest motiu, el següent pas és reescriure el sistema en forma d’espai d’estats i, posteriorment, linealitzar-lo al voltant d’un punt d’operació d’interès.
 
@@ -882,7 +841,7 @@ $$
     +
     (I + ml^2)\left(F - cx_3 + mlx_4^2\sin x_2\right)
     }{
-    Mml^2 + (M + m)I + m^2l^2\sin^2 x_2
+    M_cml^2 + (M_c + m)I + m^2l^2\sin^2 x_2
     }
 $$
 
@@ -897,10 +856,10 @@ $$
     +
     m^2l^2x_4^2\sin x_2\cos x_2
     +
-    (M + m)(bx_4 + mgl\sin x_2)
+    (M_c + m)(bx_4 + mgl\sin x_2)
     \right)
     }{
-    Mml^2 + (M + m)I + m^2l^2\sin^2 x_2
+    M_cml^2 + (M_c + m)I + m^2l^2\sin^2 x_2
     }
 $$
 
@@ -918,8 +877,8 @@ $$
     \begin{bmatrix}
     x_3 \\\\
     x_4 \\\\
-    \frac{bmlx_4 \cos x_2 + m^2l^2g \sin x_2 \cos x_2 + (I + ml^2)(F - cx_3 + mlx_4^2 \sin x_2)}{Mml^2 + (M + m)I + m^2l^2 \sin^2 x_2} \\\\
-    \frac{-(M + m)(mgl \sin x_2 + bx_4) - ml \cos x_2 (F - cx_3 + mlx_4^2 \sin x_2)}{Mml^2 + (M + m)I + m^2l^2 \sin^2 x_2}
+    \frac{bmlx_4 \cos x_2 + m^2l^2g \sin x_2 \cos x_2 + (I + ml^2)(F - cx_3 + mlx_4^2 \sin x_2)}{M_cml^2 + (M_c + m)I + m^2l^2 \sin^2 x_2} \\\\
+    \frac{-(M_c + m)(mgl \sin x_2 + bx_4) - ml \cos x_2 (F - cx_3 + mlx_4^2 \sin x_2)}{M_cml^2 + (M_c + m)I + m^2l^2 \sin^2 x_2}
     \end{bmatrix}
 $$
 
@@ -1040,6 +999,7 @@ $$
 $$
 
 Linealitzant l’equació no lineal anterior al voltant del punt de referència, s’obté la matriu d’estat:
+
 $$
     A
     =
@@ -1047,14 +1007,14 @@ $$
     0 & 0 & 1 & 0 \\\\
     0 & 0 & 0 & 1 \\\\
     0 & \dfrac{m^2l^2g}{\alpha} & -\dfrac{(I + ml^2)c}{\alpha} & -\dfrac{bml}{\alpha} \\\\
-    0 & \dfrac{mgl(M + m)}{\alpha} & -\dfrac{mlc}{\alpha} & -\dfrac{b(M + m)}{\alpha}
+    0 & \dfrac{mgl(M_c + m)}{\alpha} & -\dfrac{mlc}{\alpha} & -\dfrac{b(M_c + m)}{\alpha}
     \end{bmatrix}
 $$
 
 Prenent la força $F$ com a entrada del sistema, és a dir, $U = F$, es defineix:
 
 $$
-    \alpha = I(M + m) + Mml^2
+    \alpha = I(M_c + m) + M_cml^2
 $$
 
 i la matriu d’entrada queda:
@@ -1079,7 +1039,7 @@ $$
     0 & 0 & 1 & 0 \\\\
     0 & 0 & 0 & 1 \\\\
     0 & \dfrac{m^2l^2g}{\alpha} & -\dfrac{(I+ml^2)c}{\alpha} & -\dfrac{bml}{\alpha} \\\\
-    0 & \dfrac{mgl(M + m)}{\alpha} & -\dfrac{mlc}{\alpha} & -\dfrac{b(M + m)}{\alpha}
+    0 & \dfrac{mgl(M_c + m)}{\alpha} & -\dfrac{mlc}{\alpha} & -\dfrac{b(M_c + m)}{\alpha}
     \end{bmatrix}
     X
     +
@@ -1092,7 +1052,7 @@ $$
     F
 $$
 
-En el muntatge experimental del document de referència, la força aplicada al carro és generada per un motor PMDC. En aquest cas, la relació entre la força $F$ i el voltatge aplicat $V_m$ és:
+En el muntatge experimental del document de referència[[1]](#bib1), la força aplicada al carro és generada per un motor PMDC. En aquest cas, la relació entre la força $F$ i el voltatge aplicat $V_m$ és:
 
 $$
     F
@@ -1119,7 +1079,7 @@ $$
     0 & 0 & 1 & 0 \\\\
     0 & 0 & 0 & 1 \\\\
     0 & \dfrac{m^2l^2g}{\alpha} & -\dfrac{(I + ml^2)\left(c + \dfrac{k_tk_b}{R_mr^2}\right)}{\alpha} & -\dfrac{bml}{\alpha} \\\\
-    0 & \dfrac{mgl(M + m)}{\alpha} & -\dfrac{ml\left(c + \dfrac{k_tk_b}{R_mr^2}\right)}{\alpha} & -\dfrac{b(M + m)}{\alpha}
+    0 & \dfrac{mgl(M_c + m)}{\alpha} & -\dfrac{ml\left(c + \dfrac{k_tk_b}{R_mr^2}\right)}{\alpha} & -\dfrac{b(M_c + m)}{\alpha}
     \end{bmatrix}
     X
     +
@@ -1132,7 +1092,7 @@ $$
     V_m
 $$
 
-Per als valors numèrics del sistema experimental utilitzats al document de referència, aquest model pren la forma:
+Per als valors numèrics del sistema experimental utilitzats al document de referència[[1]](#bib1), aquest model pren la forma:
 
 $$
     \dot{X}
@@ -1283,16 +1243,16 @@ El model en Simulink és:
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/openloop.png" alt="Model en llaç obert a Simulink" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Model en llaç obert a Simulink.</div>
+    <div class="caption">Figura 2: Model en llaç obert a Simulink.</div>
   </div>
 </div>
 
-I la sorta obtinguda és:
+I la sortida obtinguda és:
 
 <div class="image-row">
   <div class="image-column">
     <img src="./images/sortida_openloop.png" alt="Resposta del sistema en llaç obert a un esglaó de tensió de 1V">
-    <div class="caption">Figura X: Resposta del sistema en llaç obert a un esglaó de tensió de 1V.</div>
+    <div class="caption">Figura 3: Resposta del sistema en llaç obert a un esglaó de tensió de 1V.</div>
   </div>
 </div>
 
@@ -1321,7 +1281,7 @@ Aquest senyal d’error entra al controlador, on és processat mitjançant les a
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/esquema_pid.png" alt="Esquema bàsic d’un sistema de control en bucle tancat amb un controlador PID" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Esquema bàsic d’un controlador PID.</div>
+    <div class="caption">Figura 4: Esquema bàsic d’un controlador PID.</div>
   </div>
 </div>
 
@@ -1330,16 +1290,16 @@ Aquest senyal d’error entra al controlador, on és processat mitjançant les a
 La funció de transferència d’un controlador PID en el domini de Laplace es pot escriure com:
 
 $$
-    G(s)=K_P+\frac{K_I}{s}+K_D s
+    G(s)=k_p+\frac{k_i}{s}+k_d s
 $$
 
 En el domini temporal, l’expressió corresponent és:
 
 $$
-    u(t)=K_P e(t)+K_I \int e(t)\,dt+K_D \frac{de(t)}{dt}
+    u(t)=k_p e(t)+k_i \int e(t)\,dt+k_d \frac{de(t)}{dt}
 $$
 
-En essència, el senyal d’error es multiplica per una acció proporcional, s’integra i també es deriva per generar un nou senyal d’entrada capaç de produir la resposta desitjada.  Per aconseguir una resposta òptima davant d’una entrada o d’una pertorbació, és necessari ajustar adequadament els guanys de cadascun d’aquests tres termes. Hi ha diferents mètodes per fer aquest ajust, però abans és important entendre quin efecte té cada guany sobre la resposta del sistema. Podem veure la següent taula, que resumeix l’efecte de cada guany sobre la resposta del sistema:
+En essència, el senyal d’error es multiplica per una acció proporcional, s’integra i també es deriva per generar un nou senyal d’entrada capaç de produir la resposta desitjada. Per aconseguir una resposta òptima davant d’una entrada o d’una pertorbació, és necessari ajustar adequadament els guanys de cadascun d’aquests tres termes. Hi ha diferents mètodes per fer aquest ajust, però abans és important entendre quin efecte té cada guany sobre la resposta del sistema. Podem veure la següent taula, que resumeix l’efecte de cada guany sobre la resposta del sistema:
 
 <div class="table-container">
   <div class="table-title">Efectes dels guanys del controlador PID</div>
@@ -1381,26 +1341,26 @@ En essència, el senyal d’error es multiplica per una acció proporcional, s�
       </tr>
     </tbody>
   </table>
-  <div class="table-caption">Taula X: Efectes de l’augment dels guanys del controlador PID sobre la resposta del sistema.</div>
+  <div class="table-caption">Taula 2: Efectes de l’augment dels guanys del controlador PID sobre la resposta del sistema.</div>
 </div>
 
 ### 3.3 Implementació del controlador PID al pèndol invertit amb Simulink
 
-Afegim inicialment un controlador PID al model linealitzatamb l’objectiu de visualitzar l’estructura bàsica del llaç de control i disposar d’un primer esquema de treball abans de passar al tractament del model no linealitzat. Aquest model linealitzat amb el controlador PID associat a l’angle del pèndol es mostra a continuació:
+Afegim inicialment un controlador PID al model linealitzat amb l’objectiu de visualitzar l’estructura bàsica del llaç de control i disposar d’un primer esquema de treball abans de passar al tractament del model no linealitzat. Aquest model linealitzat amb el controlador PID associat a l’angle del pèndol es mostra a continuació:
 
 <div class="image-row">
   <div class="image-column" style="width: 85%; max-width: 950px; margin: 0 auto;">
     <img src="./images/model_pid_lineal.png" alt="Model linealitzat en Simulink amb controlador PID" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Model linealitzat en Simulink amb controlador PID associat a l’angle del pèndol.</div>
+    <div class="caption">Figura 5: Model linealitzat en Simulink amb controlador PID associat a l’angle del pèndol.</div>
   </div>
 </div>
 
-Després implementem el model en Simulink mitjançant una arquitectura en llaç tancat on el bloc del pèndol invertit representa la planta i proporciona com a sortides els estats $x$, $\theta$, $\dot{x}$ i $\dot{\theta}$, dels quals escollim la posició del carro i l’angle del pèndol per construir el senyal d’error respecte de l’estat desitjat; aquest error s’introdueix en dos controladors PID, un associat a la posició i l’altre a l’angle, i les seves sortides es combinen per generar la comanda de control. Els valors dels guanys $K_P$, $K_I$ i $K_D$ s’han ajustat mitjançant, l'ajustador automàtic de PID de Simulink i després retocat manualment per obtenir una resposta més ràpida i amb menys sobreimpuls.  La implementació del model no linealitzat amb els controladors PID associats a la posició i a l’angle del pèndol es mostra a continuació:
+Després implementem el model en Simulink mitjançant una arquitectura en llaç tancat on el bloc del pèndol invertit representa la planta i proporciona com a sortides els estats $x$, $\theta$, $\dot{x}$ i $\dot{\theta}$, dels quals escollim la posició del carro i l’angle del pèndol per construir el senyal d’error respecte de l’estat desitjat; aquest error s’introdueix en dos controladors PID, un associat a la posició i l’altre a l’angle, i les seves sortides es combinen per generar la comanda de control. Els valors dels guanys $k_p$, $k_i$ i $k_d$ s’han ajustat mitjançant l’ajustador automàtic de PID de Simulink i després s’han retocat manualment per obtenir una resposta més ràpida i amb menys sobreimpuls. La implementació del model no linealitzat amb els controladors PID associats a la posició i a l’angle del pèndol es mostra a continuació:
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/model_pid.png" alt="Model en Simulink amb controlador PID" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Model en Simulink amb controladors PID.</div>
+    <div class="caption">Figura 6: Model en Simulink amb controladors PID.</div>
   </div>
 </div>
 
@@ -1434,7 +1394,7 @@ Pel PID associat a l'angle del pèndol, s’han seleccionat els guanys:
       </tr>
     </tbody>
   </table>
-  <div class="table-caption">Taula X: Valors dels guanys del controlador PID ajustat per al control de l’angle del pèndol.</div>
+  <div class="table-caption">Taula 3: Valors dels guanys del controlador PID ajustat per al control de l’angle del pèndol.</div>
 </div>
 
 Per al PID associat a la posició del carro, s’han seleccionat els guanys:
@@ -1467,7 +1427,7 @@ Per al PID associat a la posició del carro, s’han seleccionat els guanys:
       </tr>
     </tbody>
   </table>
-  <div class="table-caption">Taula X: Valors dels guanys del controlador PID ajustat per al control de la posició horitzontal del carro.</div>
+  <div class="table-caption">Taula 4: Valors dels guanys del controlador PID ajustat per al control de la posició horitzontal del carro.</div>
 </div>
 
 I, partint de $\theta = \pi - (\pi * 0.1)$ com a condició inicial per a l’angle del pèndol i $x = 0.2$ com a condició inicial per a la posició del carro, s’obté la següent resposta:
@@ -1475,7 +1435,7 @@ I, partint de $\theta = \pi - (\pi * 0.1)$ com a condició inicial per a l’ang
 <div class="image-row">
   <div class="image-column">
     <img src="./images/resultats_pid.png" alt="Resposta del sistema amb controlador PID" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Resposta del sistema amb controlador PID.</div>
+    <div class="caption">Figura 7: Resposta del sistema amb controlador PID.</div>
   </div>
 </div>
 
@@ -1492,7 +1452,7 @@ Un controlador LQR és un regulador òptim per a sistemes lineals en espai d’e
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/esquema_lqr.png" alt="Esquema bàsic d’un controlador LQR" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Esquema bàsic d’un controlador LQR.</div>
+    <div class="caption">Figura 8: Esquema bàsic d’un controlador LQR.</div>
   </div>
 </div>
 
@@ -1574,9 +1534,10 @@ $$
     \right)dt
 $$
 
-Les matrius $Q$ i $R$ es poden ajustar de manera independent per definir el compromís desitjat entre qualitat de la regulació i esforç de control.  En el cas del pèndol invertit, la matriu $Q$ pondera els estats del model linealitzat, és a dir, la posició del carro, l’angle del pèndol, la velocitat del carro i la velocitat angular del pèndol. Quan augmenta el pes associat a un estat dins de $Q$, la funció de cost penalitza més les desviacions d’aquella variable i el controlador tendeix a corregir-la amb més intensitat. 
+Les matrius $Q$ i $R$ es poden ajustar de manera independent per definir el compromís desitjat entre qualitat de la regulació i esforç de controlEn el cas del pèndol invertit, la matriu $Q$ pondera els estats del model linealitzat, és a dir, la posició del carro, l’angle del pèndol, la velocitat del carro i la velocitat angular del pèndol. Quan augmenta el pes associat a un estat dins de $Q$, la funció de cost penalitza més les desviacions d’aquella variable i el controlador tendeix a corregir-la amb més intensitat. 
+
 De manera anàloga, la matriu $R$ pondera la variable de control.
-Si el model s’ha formulat amb voltatge com a entrada, aleshores $R$ penalitza la tensió aplicada al motor, de manera que valors elevats de $R$ tendeixen a limitar l’amplitud del senyal de control i produeixen una resposta més suau.  En canvi, valors més petits de $R$ permeten una actuació més agressiva, a costa d’un ús més intens de l’actuador.
+Si el model s’ha formulat amb voltatge com a entrada, aleshores $R$ penalitza la tensió aplicada al motor, de manera que valors elevats de $R$ tendeixen a limitar l’amplitud del senyal de control i produeixen una resposta més suau. En canvi, valors més petits de $R$ permeten una actuació més agressiva, a costa d’un ús més intens de l’actuador.
 
 Tanmateix, les matrius $Q$ i $R$ no proporcionen directament el guany del controlador. Un cop fixades aquestes ponderacions, el problema LQR es resol mitjançant l’equació algebraica de Riccati, la qual permet calcular la matriu $P$. A partir d’aquesta solució, el guany òptim s’obté com $K=R^{-1}B^TP$, on les matrius $A$ i $B$ corresponen al model final del sistema, en aquest cas formulat amb voltatge com a entrada.
 
@@ -1610,7 +1571,7 @@ Un cop obtingut el guany $K$, s’ha implementat el controlador LQR al model no 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/model_lqr.png" alt="Model en Simulink amb controlador LQR" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Model en Simulink amb controlador LQR.</div>
+    <div class="caption">Figura 9: Model en Simulink amb controlador LQR.</div>
   </div>
 </div>
 
@@ -1619,7 +1580,7 @@ Partint de les mateixes condicions inicials que en el cas del PID, és a dir, $\
 <div class="image-row">
   <div class="image-column">
     <img src="./images/resultats_lqr.png" alt="Resposta del sistema amb controlador LQR" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Resposta del sistema amb controlador LQR.</div>
+    <div class="caption">Figura 10: Resposta del sistema amb controlador LQR.</div>
   </div>
 </div>
 
@@ -1628,7 +1589,7 @@ El voltatge consumit per aquest model és, si limitem el motor a un voltatge mà
 <div class="image-row">
   <div class="image-column">
     <img src="./images/voltatge_lqr.png" alt="Voltatge consumit pel controlador LQR" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Voltatge consumit pel controlador LQR.</div>
+    <div class="caption">Figura 11: Voltatge consumit pel controlador LQR.</div>
   </div>
 </div>
 
@@ -1638,7 +1599,7 @@ El voltatge consumit per aquest model és, si limitem el motor a un voltatge mà
 
 ## 5. Filtre de Kalman
 
-En les aplicacions reals de control, no sempre és possible mesurar directament tots els estats del sistema. A més, les mesures disponibles solen estar contaminades per soroll de sensor, i el model matemàtic del sistema conté incerteses degudes a pertorbacions externes o a simplificacions del model físic. En aquestes condicions, el controlador LQR dissenyat a l'apartat anterior no es pot aplicar directament, ja que requereix el coneixement de tots els estats. Per resoldre aquest problema s'introdueix el Filtre de Kalman, un estimador òptim que, a partir de l'entrada de control i les mesures disponibles —ambdues contaminades per soroll—, reconstrueix una estimació dels estats del sistema que minimitza l'error quadràtic mig de l'estimació.
+En les aplicacions reals de control, no sempre és possible mesurar directament tots els estats del sistema. A més, les mesures disponibles solen estar contaminades per soroll de sensor, i el model matemàtic del sistema conté incerteses degudes a pertorbacions externes o a simplificacions del model físic. En aquestes condicions, el controlador LQR dissenyat a l'apartat anterior no es pot aplicar directament, ja que requereix el coneixement de tots els estats. Per resoldre aquest problema s'introdueix el Filtre de Kalman, un estimador òptim que, a partir de l'entrada de control i les mesures disponibles, ambdues contaminades per soroll, reconstrueix una estimació dels estats del sistema que minimitza l'error quadràtic mig de l'estimació.
 
 ### 5.1 Introducció al Filtre de Kalman
 
@@ -1660,7 +1621,7 @@ $$
 \dot{e} = A\,e
 $$
 
-Si la matriu $A$ és asimptòticament estable, l'error convergeix a zero per a qualsevol condició inicial. En canvi, si $A$ és inestable —com és el cas del pèndol invertit—, l'estimació divergeix. Per corregir-ho, s'introdueix un guany d'observador $L$ que alimenta la diferència entre la sortida mesurada i la sortida estimada:
+Si la matriu $A$ és asimptòticament estable, l'error convergeix a zero per a qualsevol condició inicial. En canvi, si $A$ és inestable, com és el cas del pèndol invertit, l'estimació divergeix. Per corregir-ho, s'introdueix un guany d'observador $L$ que alimenta la diferència entre la sortida mesurada i la sortida estimada:
 
 $$
 \dot{\hat{x}} = A\hat{x} + Bu + L(y - \hat{y})
@@ -1678,8 +1639,8 @@ i es pot fer asimptòticament estable escollint $L$ adequadament. Aquesta estruc
 
 <div class="image-row">
   <div class="image-column">
-    <img src="./images/observador_ordre_complet_Kalman.jpg" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Diagrama observador d'ordre complet.</div>
+    <img src="./images/observador_ordre_complet_Kalman.jpg" style="width: 100%; height: auto; display: block;" alt="Diagrama d’un observador d’ordre complet">
+    <div class="caption">Figura 12: Diagrama observador d'ordre complet.</div>
   </div>
 </div>
 
@@ -1777,7 +1738,7 @@ La figura següent mostra el diagrama implementat a Simulink per a l'etapa del F
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/model_kalman.jpg" alt="Diagrama Simulink del Filtre de Kalman" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Diagrama Simulink de l'estimació d'estat amb el Filtre de Kalman. La planta no lineal rep com a entrada la força generada pel subsistema <code>Voltage_to_Force</code>. Les sortides s'afegeix soroll de mesura i de procés i s'introdueix al bloc <code>Kalman Filter</code>, que reconstrueix els quatre estats estimats del sistema.</div>
+    <div class="caption">Figura 13: Diagrama Simulink de l'estimació d'estat amb el Filtre de Kalman. La planta no lineal rep com a entrada la força generada pel subsistema <code>Voltage_to_Force</code>. Les sortides s'afegeix soroll de mesura i de procés i s'introdueix al bloc <code>Kalman Filter</code>, que reconstrueix els quatre estats estimats del sistema.</div>
   </div>
 </div>
 
@@ -1799,32 +1760,32 @@ La resposta de la simulació es presenta en quatre figures independents, una per
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/kalman_1.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la posició del carro" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la posició del carro x.</div>
+    <div class="caption">Figura 14: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la posició del carro x.</div>
   </div>
 </div>
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/kalman_2.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a l'angle del pèndol" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a l'angle del pèndol θ.</div>
+    <div class="caption">Figura 15: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a l'angle del pèndol θ.</div>
   </div>
 </div>
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/kalman_3.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la velocitat del carro" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat del carro ẋ.</div>
+    <div class="caption">Figura 16: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat del carro ẋ.</div>
   </div>
 </div>
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/kalman_4.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la velocitat angular del pèndol" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat angular del pèndol.</div>
+    <div class="caption">Figura 17: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat angular del pèndol.</div>
   </div>
 </div>
 
-S'observa que, en tots quatre estats, l'estimació del Filtre de Kalman segueix amb bona fidelitat la trajectòria real del sistema, tot i que el llaç no té controlador i, per tant, la resposta és en llaç obert —i divergent—. En detall:
+S'observa que, en tots quatre estats, l'estimació del Filtre de Kalman segueix amb bona fidelitat la trajectòria real del sistema, tot i que el llaç no té controlador i, per tant, la resposta és en llaç obert i divergent. En detall:
 
 - **Posició del carro $x$**: l'estimació (blava) superposa gairebé perfectament el valor real (vermell). El carro deriva de manera creixent en absència de control, cosa esperada en llaç obert.
 - **Angle del pèndol $\theta$**: les dues corbes presenten una discrepància inicial durant els primers instants, deguda al transitori de convergència de l'estimador. A partir d'aproximadament $t = 4\,\text{s}$ la diferència es redueix considerablement i les corbes convergeixen i s'apropen a $0$. Les oscil·lacions de gran amplitud dels primers segons reflecteixen la inestabilitat natural del pèndol sense control actiu.
@@ -1839,7 +1800,7 @@ En conjunt, els resultats confirmen que el Filtre de Kalman dissenyat és capaç
 
 ### 6.1 Introducció al controlador LQG
 
-El Regulador Quadràtic Lineal Gaussià (LQG) és el resultat de combinar els dos blocs dissenyats als apartats anteriors: el controlador LQR i el Filtre de Kalman. Fins ara, el controlador LQR s'ha aplicat assumint que tots els estats del sistema eren directament disponibles. En la pràctica, però, els sensors no mesuren tots els estats —o ho fan amb soroll—, de manera que el controlador no pot basar-se en el vector d'estat real $x$, sinó en una estimació $\hat{x}$ proporcionada per l'estimador.
+El Regulador Quadràtic Lineal Gaussià (LQG) és el resultat de combinar els dos blocs dissenyats als apartats anteriors: el controlador LQR i el Filtre de Kalman. Fins ara, el controlador LQR s'ha aplicat assumint que tots els estats del sistema eren directament disponibles. En la pràctica, però, els sensors no mesuren tots els estats, o ho fan amb soroll de manera que el controlador no pot basar-se en el vector d'estat real $x$, sinó en una estimació $\hat{x}$ proporcionada per l'estimador.
 
 El controlador LQG resol precisament aquest problema: aplica la llei de control òptima del LQR sobre els estats estimats pel Filtre de Kalman. La llei de control resultant és:
 
@@ -1852,12 +1813,12 @@ on $K$ és el guany LQR calculat a la secció 4 i $\hat{x}$ és l'estimació de 
 <div class="image-row">
   <div class="image-column">
     <img src="./images/LQG1.jpg" alt="Diagrama general LQG">
-    <div class="caption">Figura X: Diagrama general del LQG.</div>
+    <div class="caption">Figura 18: Diagrama general del LQG.</div>
   </div>
 
   <div class="image-column">
     <img src="./images/LQG2.jpg" alt="Diagrama de blocs detallat del LQG">
-    <div class="caption">Figura X: Diagrama de blocs detallat del LQG.</div>
+    <div class="caption">Figura 19: Diagrama de blocs detallat del LQG.</div>
   </div>
 </div>
 
@@ -1905,7 +1866,7 @@ El diagrama complet del controlador LQG implementat a Simulink es mostra a la fi
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/model_lqg.jpg" alt="Model LQG">
-    <div class="caption">Figura X: Diagrama Simulink del controlador LQG. La planta no lineal rep la força de control generada a partir de l'estimació d'estat multiplicada pel guany LQR. El bloc del Filtre de Kalman reconstrueix els quatre estats a partir de les mesures sorolloses.</div>
+    <div class="caption">Figura 20: Diagrama Simulink del controlador LQG. La planta no lineal rep la força de control generada a partir de l'estimació d'estat multiplicada pel guany LQR. El bloc del Filtre de Kalman reconstrueix els quatre estats a partir de les mesures sorolloses.</div>
   </div>
 </div>
 
@@ -1916,13 +1877,13 @@ Les condicions inicials emprades per a la simulació coincideixen amb les de les
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/output_lqg.png" alt="Model LQG">
-    <div class="caption">Figura X: Resposta del controlador LQG.</div>
+    <div class="caption">Figura 21: Resposta del controlador LQG.</div>
   </div>
 </div>
 
 A diferència del Filtre de Kalman en llaç obert (secció 5), on la trajectòria del pèndol divergia en absència de control, el controlador LQG estabilitza activament el sistema. 
 
-Gràcies al guany LQR aplicat sobre l'estimació, la força de control generada és capaç de mantenir el pèndol a la posició vertical ($\theta = \pi$) i el carro al voltant de la posició de referència, tot i que les mesures estan clarament contaminades per soroll. Pel que fa a la velocitat del carro $\dot{x}$ i velocitat angular $\dot{\theta}$** ambdues variables convergeixen a zero, cosa que confirma que el sistema assoleix un punt d'equilibri estable.
+Gràcies al guany LQR aplicat sobre l'estimació, la força de control generada és capaç de mantenir el pèndol a la posició vertical ($\theta = \pi$) i el carro al voltant de la posició de referència, tot i que les mesures estan clarament contaminades per soroll. Pel que fa a la velocitat del carro $\dot{x}$ i velocitat angular $\dot{\theta}$, ambdues variables convergeixen a zero, cosa que confirma que el sistema assoleix un punt d'equilibri estable.
 
 La diferència fonamental entre el controlador LQR (secció 4) i el LQG és el fet que el primer assumeix que tots els estats són directament mesurables i lliures de soroll, mentre que el segon treballa exclusivament amb estimacions.
 
@@ -1951,7 +1912,7 @@ La implementació s’ha realitzat en Simulink afegint un bloc extern que genera
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/model_friccio.png" alt="Model en Simulink amb fricció addicional" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Model en Simulink amb fricció addicional.</div>
+    <div class="caption">Figura 22: Model en Simulink amb fricció addicional.</div>
   </div>
 </div>
 
@@ -1993,7 +1954,7 @@ Els valors de $c_f$ seleccionats per a les simulacions han estat:
       </tr>
     </tbody>
   </table>
-  <div class="table-caption">Taula X. Valors del coeficient de fricció addicional <math><msub><mi>c</mi><mi>f</mi></msub></math> utilitzats a l’extensió del model.</div>
+  <div class="table-caption">Taula 5: Valors del coeficient de fricció addicional <math><msub><mi>c</mi><mi>f</mi></msub></math> utilitzats a l’extensió del model.</div>
 </div>
 
 #### 7.1.2 Resultats 
@@ -2003,12 +1964,12 @@ Pel cas base, és a dir, sense fricció addicional ($c_f = 0$):
 <div class="image-row">
   <div class="image-column">
     <img src="./images/ext1_01.png" alt="Resposta del sistema sense fricció addicional">
-    <div class="caption">Figura X: Resposta del sistema sense fricció addicional.</div>
+    <div class="caption">Figura 23: Resposta del sistema sense fricció addicional.</div>
   </div>
 
   <div class="image-column">
     <img src="./images/ext1_02.png" alt="Resposta del sistema amb fricció addicional elevada">
-    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional</div>
+    <div class="caption">Figura 24: Voltatge del sistema amb fricció addicional</div>
   </div>
 </div>
 
@@ -2019,12 +1980,12 @@ Pel cas amb fricció addicional baixa ($c_f = 0.3$):
 <div class="image-row">
   <div class="image-column">
     <img src="./images/ext1_03.png" alt="Resposta del sistema amb fricció addicional baixa">
-    <div class="caption">Figura X: Resposta del sistema amb fricció addicional baixa.</div>
+    <div class="caption">Figura 25: Resposta del sistema amb fricció addicional baixa.</div>
   </div>
 
   <div class="image-column">
     <img src="./images/ext1_04.png" alt="Resposta del sistema amb fricció addicional baixa">
-    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional baixa</div>
+    <div class="caption">Figura 26: Voltatge del sistema amb fricció addicional baixa</div>
   </div>
 </div>
 
@@ -2035,12 +1996,12 @@ Pel cas amb fricció addicional mitjana, sent el doble del coeficient de fricci�
 <div class="image-row">
   <div class="image-column">
     <img src="./images/ext1_05.png" alt="Resposta del sistema amb fricció addicional elevada">
-    <div class="caption">Figura X: Resposta del sistema amb fricció addicional elevada.</div>
+    <div class="caption">Figura 27: Resposta del sistema amb fricció addicional elevada.</div>
   </div>
 
   <div class="image-column">
     <img src="./images/ext1_06.png" alt="Resposta del sistema amb fricció addicional elevada">
-    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional elevada</div>
+    <div class="caption">Figura 28: Voltatge del sistema amb fricció addicional elevada</div>
   </div>
 </div>
 
@@ -2051,12 +2012,12 @@ Pel cas amb fricció addicional més elevada, sent el triple del coeficient de f
 <div class="image-row">
   <div class="image-column">
     <img src="./images/ext1_07.png" alt="Resposta del sistema amb fricció addicional més elevada">
-    <div class="caption">Figura X: Resposta del sistema amb fricció addicional més elevada.</div>
+    <div class="caption">Figura 29: Resposta del sistema amb fricció addicional més elevada.</div>
   </div>
 
   <div class="image-column">
     <img src="./images/ext1_08.png" alt="Resposta del sistema amb fricció addicional més elevada">
-    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional més elevada</div>
+    <div class="caption">Figura 30: Voltatge del sistema amb fricció addicional més elevada</div>
   </div>
 </div>
 
@@ -2067,12 +2028,12 @@ Pel cas amb fricció addicional extrema ($c_f = 5$):
 <div class="image-row">
   <div class="image-column">
     <img src="./images/ext1_09.png" alt="Resposta del sistema amb fricció addicional extrema">
-    <div class="caption">Figura X: Resposta del sistema amb fricció addicional extrema.</div>
+    <div class="caption">Figura 31: Resposta del sistema amb fricció addicional extrema.</div>
   </div>
 
   <div class="image-column">
     <img src="./images/ext1_10.png" alt="Resposta del sistema amb fricció addicional extrema">
-    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional extrema</div>
+    <div class="caption">Figura 32: Voltatge del sistema amb fricció addicional extrema</div>
   </div>
 </div>
 
@@ -2081,12 +2042,12 @@ Aquí el comportament canvia radicalment, perquè el sistema ja no convergeix ca
 <div class="image-row">
   <div class="image-column">
     <img src="./images/ext1_11.png" alt="Resposta del sistema amb fricció addicional extrema i motor més potent">
-    <div class="caption">Figura X: Resposta del sistema amb fricció addicional extrema i motor més potent.</div>
+    <div class="caption">Figura 33: Resposta del sistema amb fricció addicional extrema i motor més potent.</div>
   </div>
 
   <div class="image-column">
     <img src="./images/ext1_12.png" alt="Voltatge del sistema amb fricció addicional extrema i motor més potent">
-    <div class="caption">Figura X: Voltatge del sistema amb fricció addicional extrema i motor més potent</div>
+    <div class="caption">Figura 34: Voltatge del sistema amb fricció addicional extrema i motor més potent</div>
   </div>
 </div>
 
@@ -2180,12 +2141,12 @@ La taula següent recull la configuració dels cinc casos simulats:
       </tr>
     </tbody>
   </table>
-  <div class="table-caption">Taula X. Casos simulats per a l'anàlisi de sensibilitat del Filtre de Kalman, amb les matrius de covariança emprades i el quocient resultant.</div>
+  <div class="table-caption">Taula 6: Casos simulats per a l'anàlisi de sensibilitat del Filtre de Kalman, amb les matrius de covariança emprades i el quocient resultant.</div>
 </div>
 
-Abans de passar a la simulació, interpretem el guany $L$ i els valors pròpis obtinguts per cada cas. 
+Abans de passar a la simulació, interpretem el guany $L$ i els valors propis obtinguts per cada cas. 
 
-Recordem que la velocitat de convergència de l'estimador depèn dels valors propis de la matriu $A - LC$. A més, el guany $L$ determina amb quina agressivitat es corregeix cada estat quan la mesura divergeix de la predicció del model. Els valors propis de $A - LC$ determinen els modes de convergència de l'error d'estimació, com més negatius siguin, més ràpid decau l'error. Per tant, el valor propi dominant —el menys negatiu— és el que marca la velocitat global de convergència a través de la constant de temps $\tau = -1/\lambda_{\min}$. 
+Recordem que la velocitat de convergència de l'estimador depèn dels valors propis de la matriu $A - LC$. A més, el guany $L$ determina amb quina agressivitat es corregeix cada estat quan la mesura divergeix de la predicció del model. Els valors propis de $A - LC$ determinen els modes de convergència de l'error d'estimació, com més negatius siguin, més ràpid decau l'error. Per tant, el valor propi dominant, és a dir, el menys negatiu, és el que marca la velocitat global de convergència a través de la constant de temps $\tau = -1/\lambda_{\min}$. 
 
 Per al **cas 1 (base, secció 5)**, el guany és:
 
@@ -2222,45 +2183,45 @@ de la mesura de $x$. Per tant, assumint que els sensors són molt sorollosos, el
 
 #### 7.2.2 Resultats
 
-**Cas 1 — cas base ($Q_N = R_N = 0.001 \cdot I_4$)**
+**Cas 1: cas base ($Q_N = R_N = 0.001 \cdot I_4$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA1.png" alt="Resposta del sistema — Cas A1 (base)" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas base amb Q_N = R_N = 0.001 · I_4.</div>
+    <img src="./images/ext2_casA1.png" alt="Resposta del sistema Cas A1 (base)" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 35: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas base amb Q_N = R_N = 0.001 · I_4.</div>
   </div>
 </div>
 
 El cas base reprodueix els resultats i la interpretació de la secció 5.
 
-**Cas 2 — model incert ($Q_N = 0.1 \cdot I_4$, $Q_N/R_N = 100$)**
+**Cas 2: model incert ($Q_N = 0.1 \cdot I_4$, $Q_N/R_N = 100$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA2.png" alt="Resposta del sistema — Cas A2" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 2 amb Q_N/R_N = 100.</div>
+    <img src="./images/ext2_casA2.png" alt="Resposta del sistema Cas A2" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 36: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 2 amb Q_N/R_N = 100.</div>
   </div>
 </div>
 
 Amb el valor propi dominant a $-10.04$ ($\tau \approx 0.1$ s), l'estimació de $\theta$ convergeix més ràpid que al cas base, les dues corbes ja coincideixen a partir de $t \approx 2$ s. La gràfica de $\dot{\theta}$ mostra un millor solapament des dels primers instants respecte al cas base. Tanmateix, aquesta major confiança en els sansors absorveix també més soroll. A la gràfica de $\dot{x}$, la corba real (vermella) presenta una dispersió de soroll de mesura clarament superior a la del cas base. Per tant, guanyem rapidesa de convergència a costa d'una estimació més sensible al soroll.
 
-**Cas 3 — sensors sorollosos ($R_N = 0.1 \cdot I_4$, $Q_N/R_N = 0.01$)**
+**Cas 3: sensors sorollosos ($R_N = 0.1 \cdot I_4$, $Q_N/R_N = 0.01$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA3.png" alt="Resposta del sistema — Cas A3" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 3 amb Q_N/R_N = 0.01.</div>
+    <img src="./images/ext2_casA3.png" alt="Resposta del sistema Cas A3" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 37: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 3 amb Q_N/R_N = 0.01.</div>
   </div>
 </div>
 
 En assumir que els sensors són sorollosos ($R_N$ gran), el guany $L_3$ es redueix i l'estimador passa a confiar principalment en la predicció del model. A la gràfica de $x$: la corba vermella mostra un soroll considerable, mentre que l'estimació blava descriu una trajectòria molt suau que captura únicament la tendència de fons. El mateix s'observa per a $\dot{x}$, on el soroll de mesura és molt visible al senyal real i l'estimació el filtra de manera notable. La gràfica de $\dot{\theta}$, en canvi, mostra que l'estimador segueix correctament la dinàmica angular malgrat la menor reactivitat, gràcies al fet que els elements de la columna 4 de $L_3$ (associats a $\dot{\theta}$) conserven valors relativament elevats ($13.56$). El pol dominant a $-0.10$ introdueix un transitori lent, però en conjunt l'estimació és robusta al soroll de mesura.
 
-**Cas 4 — model molt incert ($Q_N = 10 \cdot I_4$, $Q_N/R_N = 10\,000$)**
+**Cas 4: model molt incert ($Q_N = 10 \cdot I_4$, $Q_N/R_N = 10\,000$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA4.png" alt="Resposta del sistema — Cas A4" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 4 amb Q_N/R_N = 10\,000.</div>
+    <img src="./images/ext2_casA4.png" alt="Resposta del sistema  Cas A4" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 38: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 4 amb Q_N/R_N = 10\,000.</div>
   </div>
 </div>
 
@@ -2268,12 +2229,12 @@ Amb valors propis a $-100 \pm 0.28j$ i $-111 \pm 46j$, l'estimador és extremada
 
 <div class="page-break"></div>
 
-**Cas 5 — sensors molt sorollosos ($R_N = 10 \cdot I_4$, $Q_N/R_N = 0.0001$)**
+**Cas 5: sensors molt sorollosos ($R_N = 10 \cdot I_4$, $Q_N/R_N = 0.0001$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA5.png" alt="Resposta del sistema — Cas A5" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura X: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 5 amb Q_N/R_N = 0.0001.</div>
+    <img src="./images/ext2_casA5.png" alt="Resposta del sistema Cas A5" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 39: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 5 amb Q_N/R_N = 0.0001.</div>
   </div>
 </div>
 
@@ -2294,6 +2255,18 @@ Finalment, l'anàlisi dels guanys $L$ de cada cas confirma que, independentment 
 <div class="page-break"></div>
 
 ## 8. Conclusions
+
+En aquest treball s’ha desenvolupat un estudi complet del pèndol invertit sobre carro com a problema de control, seguint una estructura inspirada en el treball de referència però adaptada a un sistema diferent i més proper al context de l’assignatura. A partir de les equacions del moviment, s’ha obtingut un model no lineal físicament coherent i, posteriorment, una linearització al voltant de la posició vertical inestable, fet que ha permès formular el sistema en espai d’estats i analitzar-ne les propietats bàsiques. En aquesta etapa s’ha comprovat que el model és controlable i observable, mentre que en llaç obert no és estable, cosa que justifica la necessitat de dissenyar un controlador.
+
+A nivell de control, els resultats mostren clarament la diferència entre treballar sense realimentació i fer-ho amb tècniques de control adequades. El controlador PID ja permet estabilitzar el sistema amb un comportament correcte, però el regulador LQR aconsegueix una resposta més suau i més ben estructurada, amb menys oscil·lació inicial i amb una formulació més sistemàtica basada en l’optimització d’una funció de cost. Això confirma que, per a un sistema multivariable i inestable com el pèndol invertit, el control en espai d’estats ofereix una eina més potent i més natural que un ajust clàssic purament empíric.
+
+Pel que fa a l’estimació d’estat, el Filtre de Kalman ha demostrat ser capaç de reconstruir amb bona fidelitat les variables internes del sistema fins i tot en presència de soroll de procés i de mesura. Tot i que apareix un transitori inicial degut a la diferència entre l’estat real i l’estat inicial de l’estimador, un cop superada aquesta fase l’estimació segueix de manera satisfactòria l’evolució real dels estats. Aquest resultat és especialment important perquè fa possible abandonar la hipòtesi ideal de mesurar directament tots els estats i apropar el model de control a una situació més realista. 
+
+La combinació del LQR amb el Filtre de Kalman ha permès construir un controlador LQG complet, que és el resultat principal del projecte. Les simulacions mostren que aquest esquema és capaç d’estabilitzar el pèndol invertit tot i treballar amb mesures contaminades per soroll, mantenint el pèndol a prop de la vertical i el carro al voltant de la referència. Per tant, el treball confirma en la pràctica el principi de separació: es pot dissenyar el controlador i l’estimador per separat i, un cop integrats, el comportament global continua sent satisfactori.
+
+Les dues extensions també aporten conclusions útils des del punt de vista físic i de disseny. En la primera s’ha vist que una fricció addicional moderada no destrueix l’estabilització i fins i tot pot reduir la demanda instantània de control, mentre que una fricció massa elevada porta el sistema a saturació si l’actuador no té prou marge. En la segona s’ha comprovat que el rendiment del Filtre de Kalman depèn fortament del balanç entre la covariança del soroll de procés i la del soroll de mesura: si el filtre es torna massa agressiu amplifica el soroll, i si es torna massa conservador deixa de seguir adequadament la dinàmica real. 
+
+En conjunt, el projecte ha servit per entendre de manera aplicada i coherent tot el flux de treball d’un problema modern de control: modelar, linearitzar, verificar propietats estructurals, dissenyar el controlador, estimar l’estat i validar el comportament global amb simulacions. Més enllà dels resultats concrets, el més rellevant és que s’ha pogut veure com eines com el LQR, el Filtre de Kalman i el LQG no són blocs aïllats, sinó parts d’un mateix esquema de disseny amb sentit físic i matemàtic. Això fa que el pèndol invertit sigui un exemple molt útil per consolidar conceptes de sistemes dinàmics i control que després es poden traslladar a aplicacions més complexes.
 
 <div class="page-break"></div>
 

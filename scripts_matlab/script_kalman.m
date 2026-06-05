@@ -47,9 +47,10 @@ A = [0,  0,   1,   0 ;
 
 B = [0 ; 0 ; mm ; nn];
 
-% Sortida: tots 4 estats 
-C = eye(4);
-D = zeros(4, 1);
+% Sortida: sensors mesuren només posició i angle 
+C = [1 0 0 0;
+     0 1 0 0];
+D = zeros(2, 1);
 
 % Nombre d'estats
 n = 4;
@@ -72,7 +73,7 @@ fprintf('Rank observabilitat:  %d / %d\n', rank_obsv, n);
 % Vd: covariança del soroll de procés  (incertesa del model)
 % Vn: covariança del soroll de mesura  (incertesa dels sensors)
 Vd = 0.001 * eye(n); 
-Vn = 0.001 * eye(n);
+Vn = 0.001 * eye(2);
 
 % Guany de Kalman L
 L = lqr(A', C', Vd, Vn)';
@@ -80,3 +81,12 @@ fprintf('Guany Kalman L:\n'); disp(L)
 
 % valors propis de l'observador
 fprintf('Valors propis A-LC: '); disp(eig(A - L*C)')
+
+% Matrius per al bloc ss de Simulink
+Akf = A - L*C;          % 4x4
+Bkf = [B, L];           % 4x3  (1 entrada de control + 2 mesures)
+Ckf = eye(4);           % 4x4  (sortida: els 4 estats estimats)
+Dkf = zeros(4, 3);      % 4x3
+
+rank_obsv = rank(obsv(A, C));  % 4
+fprintf('Rank observabilitat: %d / %d\n', rank_obsv, n);

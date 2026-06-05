@@ -1,5 +1,4 @@
 clear all; clc;
-
 % ==========================================
 % PARÀMETRES FÍSICS DEL PÈNDOL INVERTIT
 % ==========================================
@@ -9,37 +8,33 @@ m   = 0.1;          % Massa del pèndol [kg]
 l   = 0.2;          % Longitud fins al CG del pèndol [m]
 I   = 0.00072;      % Moment d'inèrcia del pèndol [kg·m²]
 g   = 9.81;         % Gravetat [m/s²]
-b   = 0.000078  ;   % Fricció viscosa al pivot del pèndol [N·m·s/rad]
+b   = 0.000078;     % Fricció viscosa al pivot del pèndol [N·m·s/rad]
 c   = 0.63;         % Fricció viscosa del carro [N·s/m]
 Rm  = 12.5;         % Resistència d'armadura del motor [Ω]
 kb  = 0.031;        % Constant de força contraelectromotriu [V·s/rad]
 kt  = 0.031;        % Constant de parell del motor [N·m/A]
-Jm = 3.26e-8;
-M  = M_c + Jm / r^2;   % ≈ 0.135 + 0.000906 ≈ 0.1359 kg
-% Massa total efectiva del carro (≈M_c)
+Jm  = 3.26e-8;
+
+M   = M_c + Jm / r^2;   % Massa total efectiva del carro
 
 % ==========================================
 % DERIVACIÓ DE LA MATRIU A (espai d'estats)
 % ==========================================
-% α = denominador comú
-alpha = I*(M_c + m) + M_c*m*(l^2);  % [kg²·m²]
+alpha = I*(M + m) + M*m*(l^2);
 
-% Elements de la matriu A
-aa =  (m^2 * l^2 * g) / alpha;                          % A(3,2)
-bb =  ((I + m*l^2) / alpha) * (c + (kb*kt)/(Rm*r^2));   % -A(3,3)
-cc =  (b * m * l) / alpha;                              % -A(3,4)
-dd =  (m * g * l * (M_c + m)) / alpha;                  % A(4,2)
-ee =  ((m*l) / alpha) * (c + (kb*kt)/(Rm*r^2));         % -A(4,3)
-ff =  ((M_c + m) * b) / alpha;                          % -A(4,4)
+aa = (m^2 * l^2 * g) / alpha;
+bb = ((I + m*l^2) / alpha) * (c + (kb*kt)/(Rm*r^2));
+cc = (b * m * l) / alpha;
+dd = (m * g * l * (M + m)) / alpha;
+ee = ((m*l) / alpha) * (c + (kb*kt)/(Rm*r^2));
+ff = ((M + m) * b) / alpha;
 
-% Elements de la matriu B (entrada: tensió Vm)
-mm = ((I + m*l^2) * kt) / (alpha * Rm * r);  % B(3)
-nn = (m * l * kt) / (alpha * Rm * r);        % B(4)
+mm = ((I + m*l^2) * kt) / (alpha * Rm * r);
+nn = (m * l * kt) / (alpha * Rm * r);
 
 % ==========================================
 % MODEL EN ESPAI D'ESTATS  x = [x, θ, ẋ, θ̇]
 % ==========================================
-% Entrada: tensió Vm [V]
 A = [0,  0,   1,   0 ;
      0,  0,   0,   1 ;
      0,  aa, -bb, -cc ;
@@ -47,11 +42,11 @@ A = [0,  0,   1,   0 ;
 
 B = [0 ; 0 ; mm ; nn];
 
-% Sortida: tots 4 estats 
-C = eye(4);
-D = zeros(4, 1);
+% Sortida: només sensors de posició i angle
+C = [1 0 0 0;
+     0 1 0 0];
+D = zeros(2,1);
 
-% Nombre d'estats
 n = 4;
 
 fprintf('Matriu A calculada:\n');  disp(A)
@@ -60,31 +55,38 @@ fprintf('Vector B calculat:\n');   disp(B)
 % ==========================================
 % ESTIMADOR — FILTRE DE KALMAN
 % ==========================================
+Vd = 0.001 * eye(n);
+Vn = 0.001 * eye(2);
 
-% Vd: covariança del soroll de procés  (incertesa del model)
-% Vn: covariança del soroll de mesura  (incertesa dels sensors)
-Vd = 0.001 * eye(n);   
-Vn = 0.001 * eye(n);
-
-% Guany de Kalman L:
 L = lqr(A', C', Vd, Vn)';
+
+fprintf('Cas base — Guany Kalman L:\n'); disp(L)
+fprintf('Cas base — eigs(A-LC): ');
+disp(eig(A - L*C)')
 
 % ==========================================
 % EXTENSIÓ 2: VARIACIÓ DE Vd i Vn
 % ==========================================
-casos = {0.001, 0.001;   % cas base
-         0.1,   0.001;   % model incert
-         0.001, 0.1;     % sensors sorollosos
-         10,    0.001;   % model molt incert
-         0.001, 10};     % sensors molt sorollosos
+casos = {
+    0.001, 0.001;   % cas base
+    0.1,   0.001;   % model incert
+    0.001, 0.1;     % sensors sorollosos
+    10,    0.001;   % model molt incert
+    0.001, 10       % sensors molt sorollosos
+};
 
 for i = 1:5
-    Vd_i = casos{i,1} * eye(n);
-    Vn_i = casos{i,2} * eye(n);
-    L_i  = lqr(A', C', Vd_i, Vn_i)';
-    fprintf('Cas %d — Guany Kalman L_i:\n', i); disp(L_i)
-    fprintf('Cas %d — eigs(A-LC): ', i);
-    disp(eig(A - L_i*C)')
-end
-fprintf('Valors propis A-LC: '); disp(eig(A - L*C)')
+    Vd_i = casos{i,1} * eye(n);   % 4x4
+    Vn_i = casos{i,2} * eye(2);   % 2x2
 
+    L_i  = lqr(A', C', Vd_i, Vn_i)';
+
+    fprintf('Cas %d\n', i);
+    fprintf('Vd = %.4g · I4,   Vn = %.4g · I2\n', casos{i,1}, casos{i,2});
+    fprintf('Guany Kalman L_i:\n');
+    disp(L_i)
+
+    fprintf('Valors propis de A - L_i C:\n');
+    disp(eig(A - L_i*C)')
+    fprintf('\n');
+end

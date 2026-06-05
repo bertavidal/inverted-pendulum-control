@@ -1,30 +1,26 @@
 clear all; clc;
-
 % ==========================================
 % 1. PARÀMETRES FÍSICS DEL PÈNDOL INVERTIT
 % ==========================================
-r   = 0.006;        % Radi del pinyó del motor [m]
-M_c = 0.135;        % Massa del carro [kg]
-m   = 0.1;          % Massa del pèndol [kg]
-l   = 0.2;          % Longitud fins al CG del pèndol [m]
-I   = 0.00072;      % Moment d'inèrcia del pèndol [kg·m²]
-g   = 9.81;         % Gravetat [m/s²]
-b   = 0.000078;     % Fricció viscosa al pivot del pèndol [N·m·s/rad]
-c   = 0.63;         % Fricció viscosa del carro [N·s/m]
-Rm  = 12.5;         % Resistència d'armadura del motor [Ω]
-kb  = 0.031;        % Constant de força contraelectromotriu [V·s/rad]
-kt  = 0.031;        % Constant de parell del motor [N·m/A]
-Jm  = 3.26e-8;      % Inèrcia del motor [kg·m²]
-
-% Massa total efectiva (carro + inèrcia rotacional del motor)
-M  = M_c + Jm / r^2;   
+r   = 0.006;
+M_c = 0.135;
+m   = 0.1;
+l   = 0.2;
+I   = 0.00072;
+g   = 9.81;
+b   = 0.000078;
+c   = 0.63;
+Rm  = 12.5;
+kb  = 0.031;
+kt  = 0.031;
+Jm  = 3.26e-8;
+M   = M_c + Jm / r^2;
 
 % ==========================================
 % 2. MODEL EN ESPAI D'ESTATS x = [x, θ, ẋ, θ̇]'
 % ==========================================
-alpha = I*(M + m) + M*m*(l^2);  % Denominador comú
+alpha = I*(M + m) + M*m*(l^2);
 
-% Coeficients
 aa = (m^2 * l^2 * g) / alpha;
 bb = ((I + m*l^2) / alpha) * (c + (kb*kt)/(Rm*r^2));
 cc = (b * m * l) / alpha;
@@ -34,37 +30,52 @@ ff = ((M + m) * b) / alpha;
 mm = ((I + m*l^2) * kt) / (alpha * Rm * r);
 nn = (m * l * kt) / (alpha * Rm * r);
 
-% Matrius contínues
 A = [0,  0,   1,   0 ;
-    0,  0,   0,   1 ;
-    0,  aa, -bb, -cc ;
-    0,  dd, -ee, -ff ];
-
+     0,  0,   0,   1 ;
+     0,  aa, -bb, -cc ;
+     0,  dd, -ee, -ff ];
 B = [0 ; 0 ; mm ; nn];
-C = eye(4);
-D = zeros(4, 1);
-n = 4; % Nombre d'estats
+
+% Sensors reals: només posició i angle
+C = [1 0 0 0;
+     0 1 0 0];
+D = zeros(2, 1);
+n = 4;
+
+fprintf('Matriu A:\n'); disp(A)
+fprintf('Vector B:\n'); disp(B)
 
 % ==========================================
-% 3. DISSENY DEL CONTROLADOR ÒPTIM (LQR)
+% 3. CONTROLABILITAT I OBSERVABILITAT
 % ==========================================
-Q = diag([1200 1500 0 0]);      % Pesos dels estats
-R_lqr = 0.05;                   % Cost de l'esforç de control
-KK = lqr(A, B, Q, R_lqr);       % Guany de realimentació
-
-eig(A - B*KK)   % valors propis
+fprintf('Rank controlabilitat: %d / %d\n', rank(ctrb(A, B)), n);
+fprintf('Rank observabilitat:  %d / %d\n', rank(obsv(A, C)), n);
 
 % ==========================================
-% 4. DISSENY DE L'ESTIMADOR ÒPTIM (FILTRE DE KALMAN)
+% 4. CONTROLADOR LQR
 % ==========================================
-Vd = 0.001 * eye(n);   
-Vn = 0.001 * eye(n);
-L = lqr(A', C', Vd, Vn)';       % Guany de Kalman 
+Q    = diag([1200, 1500, 0, 0]);
+R_lqr = 0.05;
+KK   = lqr(A, B, Q, R_lqr);
 
-eig(A - L*C)
+fprintf('Guany LQR KK:\n'); disp(KK)
+fprintf('Valors propis A-B*KK: '); disp(eig(A - B*KK)')
 
-% Matrius de l'observador
-Akf = A - L*C;
-Bkf = [B, L];
-Ckf = eye(4);
-Dkf = zeros(4, 5); % 4 sortides, i 5 entrades (1 de la 'u' + 4 de la 'y')
+% ==========================================
+% 5. FILTRE DE KALMAN
+% ==========================================
+Vd = 0.001 * eye(n);   % Soroll de procés:  4x4
+Vn = 0.001 * eye(2);   % Soroll de mesura:  2x2 (2 sensors)
+
+L  = lqr(A', C', Vd, Vn)';   % Guany Kalman: 4x2
+
+fprintf('Guany Kalman L:\n'); disp(L)
+fprintf('Valors propis A-L*C: '); disp(eig(A - L*C)')
+
+% Matrius per al bloc ss de Simulink
+Akf = A - L*C;       % 4x4
+Bkf = [B, L];        % 4x3  (u escalar + 2 mesures)
+Ckf = eye(4);        % 4x4
+Dkf = zeros(4, 3);   % 4x3
+
+fprintf('Dimensions Bkf: %dx%d\n', size(Bkf,1), size(Bkf,2))

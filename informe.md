@@ -1639,7 +1639,7 @@ i es pot fer asimptòticament estable escollint $L$ adequadament. Aquesta estruc
 
 <div class="image-row">
   <div class="image-column">
-    <img src="./images/observador_ordre_complet_Kalman.jpg" style="width: 100%; height: auto; display: block;" alt="Diagrama d’un observador d’ordre complet">
+    <img src="./images/observador_ordre_complet_Kalman.jpg" style="width: 100%; height: auto; display: block;" alt="Diagrama d'un observador d'ordre complet">
     <div class="caption">Figura 12: Diagrama observador d'ordre complet.</div>
   </div>
 </div>
@@ -1647,9 +1647,9 @@ i es pot fer asimptòticament estable escollint $L$ adequadament. Aquesta estruc
 Per al Filtre de Kalman, que és un estimador òptim respecte d'un observador genèric, el model del sistema inclou explícitament els termes de soroll:
 
 $$
-\dot{\hat{x}} = A\hat{x} + Bu + Gw(t)
+\dot{x} = Ax + Bu + Gw(t)
 \qquad
-\hat{y} = C\hat{x} + v(t)
+y = Cx + v(t)
 $$
 
 on $w(t)$ és el soroll de procés i $v(t)$ és el soroll de mesura, ambdós de tipus gaussià de mitjana zero, amb matrius de covariança:
@@ -1688,57 +1688,67 @@ on `Vd` és la covariança del soroll de procés ($Q_N$) i `Vn` és la covarian�
         \mathcal{O} = \begin{bmatrix} C \\ CA \\ CA^2 \\ CA^3 \end{bmatrix}, \qquad \text{rang}(\mathcal{O}) = n = 4
     $$
 
-    Donat que al model linealitzat la matriu de sortida és $C = I_4$ (es mesuren tots quatre estats), l'observabilitat és trivial i el rang resulta 4. Per tant, el sistema és completament observable i l'estimador es pot implementar correctament.
+    Assumim que els sensors del sistema únicament mesuren la posició del carro $x$ i l'angle del pèndol $\theta$. Això vol dir que la matriu de sortida és
+
+    $$
+        C = \begin{bmatrix} 1 & 0 & 0 & 0 \\ 0 & 1 & 0 & 0 \end{bmatrix}
+    $$
+
+    Aquesta és una hipòtesi realista en un sistema del pèndul invertit real en el es diposa d'encoders que mesuren posicions i angles, però la velocitat s'ha de deduir per derivació o estimació. Malgrat mesurar-se només 2 de les 4 variables d'estat, el sistema continua sent completament observable: el càlcul del rang de la matriu $\mathcal{O}$ dóna 4, cosa que confirma que $\dot{x}$ i $\dot{\theta}$ es poden reconstruir íntegrament a partir de $x$, $\theta$ i la dinàmica del model.
+
+    ```matlab
+    rank_obsv = rank(obsv(A, C));  % resultat: 4
+    ```
 
 2. Configuració de les matrius de covariança:
 
     Les matrius de covariança $Q_N$ i $R_N$ regulen el compromís entre confiar en el model del sistema o en les mesures dels sensors. Valors grans de $Q_N$ indiquen un model incert i forcen l'estimador a seguir les mesures. Valors grans de $R_N$ indiquen sensors sorollosos i forcen l'estimador a confiar més en la predicció del model.
 
-    En la implementació d'aquest treball, les covariàncies del soroll de procés i de mesura s’han inicialitzat amb matrius diagonals identitat i s’han ajustat empíricament fins obtenir una estimació estable. La configuració final escollida assumeix un nivell de confiança equivalent en el model i en els sensors:
+    En la implementació d'aquest treball, les covariàncies s'han inicialitzat amb matrius identitat escalades i s'han ajustat empíricament fins obtenir una estimació estable. $Q_N$ és de dimensió $4\times4$ (un terme per a cada estat), mentre que $R_N$ és de dimensió $2\times2$ (un terme per a cada mesura disponible, $x$ i $\theta$):
 
     $$
-        Q_N = 0.001 \cdot I_4, \qquad R_N = 0.001 \cdot I_4
+        Q_N = 0.001 \cdot I_4, \qquad R_N = 0.001 \cdot I_2
     $$
 
     ```matlab
-    Vd = 0.001 * eye(n);   % Covariança del soroll de procés
-    Vn = 0.001 * eye(n);   % Covariança del soroll de mesura
+    Vd = 0.001 * eye(n);   % Covariança del soroll de procés  (4×4)
+    Vn = 0.001 * eye(2);   % Covariança del soroll de mesura  (2×2)
     ```
 
 3. Guany de Kalman obtingut:
 
-    El guany $L$ obtingut numèricament és:
+    El guany $L$ obtingut numèricament és una matriu de dimensió $4\times2$, ja que hi ha 4 estats a estimar i només 2 sortides mesurades:
 
     $$
         L =
         \begin{bmatrix}
-        1.0035 &  0.0143 &  0.0053 &  0.0579 \\
-        0.0143 &  0.4472 &  0.0988 &  2.3379 \\
-        0.0053 &  0.0988 &  0.0510 &  0.4500 \\
-        0.0579 &  2.3379 &  0.4500 & 15.1112
+        1.0132 &  0.3749 \\
+        0.3749 & 13.8761 \\
+        0.0836 &  3.0135 \\
+        2.5692 & 95.8435
         \end{bmatrix}
     $$
 
-    Les columnes d'$L$ associades a $\theta$ i $\dot{\theta}$ (columnes 2 i 4) presenten valors notablement superiors als de les columnes de $x$ i $\dot{x}$. Això és consistent amb la dinàmica del sistema: l'angle del pèndol és l'estat més crític i inestable, i per tant requereix una correcció estimada més agressiva.
+    La primera columna d'$L$ correspon a la correcció basada en l'error de posició $x$, i la segona a la correcció basada en l'error d'angle $\theta$. S'observa que els valors de la segona columna, associats a $\theta$, són notablement superiors als de la primera. Això és consistent amb la dinàmica del sistema: l'angle del pèndol és l'estat més crític i inestable, i per tant requereix una correcció estimada més agressiva. En particular, el terme $L_{42} = 95.84$ indica que l'estimació de $\dot{\theta}$ és altament sensible a l'error d'angle mesurat, cosa esperada ja que $\dot{\theta}$ no es mesura directament i s'ha de derivar a partir de $\theta$.
 
 4. Valors propis de l'observador:
 
     La velocitat de convergència de l'estimador ve determinada pels valors propis de la matriu $A - LC$:
 
     ```matlab
-    Valors propis A−LC:  −1.0036,  −18.988,  −7.526 ± 0.922i
+    Valors propis A−LC:  −19.7518,  −1.0037,  −7.0098,  −5.5558
     ```
 
-    Tots quatre valors propis tenen part real estrictament negativa, cosa que garanteix que l'estimador és asimptòticament estable i que l'error d'estimació convergeix a zero. A més, el valor propi dominant és $-1.0036$, significativament més ràpid que la dinàmica inestable del sistema en llaç obert (que presentava un pol positiu a $+6.92$), de manera que l'observador pot seguir el sistema sense un retard significatiu.
+    Tots quatre valors propis tenen part real estrictament negativa, cosa que garanteix que l'estimador és asimptòticament estable i que l'error d'estimació convergeix a zero. El valor propi dominant en mòdul és $-1.0037$, significativament més ràpid que la dinàmica inestable del sistema en llaç obert (que presentava un pol positiu a $+6.92$), de manera que l'observador pot seguir el sistema sense un retard significatiu. Equivalent a un temps de convergència d'aproximadament $1\,\text{s}$.
 
 ### 5.3 Implementació a Simulink
 
-La figura següent mostra el diagrama implementat a Simulink per a l'etapa del Filtre de Kalman. S'hi distingeixen tres parts principals: la planta no lineal del pèndol, el soroll afegit a les sortides, i el bloc estimador del Filtre de Kalman.
+La figura següent mostra el diagrama implementat a Simulink per a l'etapa del Filtre de Kalman. S'hi distingeixen tres parts principals: la planta no lineal del pèndol, el soroll afegit i el bloc estimador del Filtre de Kalman.
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
     <img src="./images/model_kalman.jpg" alt="Diagrama Simulink del Filtre de Kalman" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura 13: Diagrama Simulink de l'estimació d'estat amb el Filtre de Kalman. La planta no lineal rep com a entrada la força generada pel subsistema <code>Voltage_to_Force</code>. Les sortides s'afegeix soroll de mesura i de procés i s'introdueix al bloc <code>Kalman Filter</code>, que reconstrueix els quatre estats estimats del sistema.</div>
+    <div class="caption">Figura 13: Diagrama Simulink de l'estimació d'estat amb el Filtre de Kalman. La planta no lineal rep com a entrada la força generada pel subsistema <code>Voltage_to_Force</code>. Només les sortides de posició i angle surten del bloc de la planta cap al Filtre de Kalman, al qual s'afegeix soroll de mesura. El bloc <code>Kalman Filter</code> reconstrueix els quatre estats estimats del sistema a partir d'aquestes dues mesures parcials.</div>
   </div>
 </div>
 
@@ -1747,11 +1757,9 @@ Concretament, el diagrama conté els elements següents:
 - **`Voltage_to_Force`**: subsistema que converteix la tensió d'entrada en la força equivalent aplicada al carro, incorporant la dinàmica elèctrica del motor (resistència d'armadura, constant de parell i constant de força contraelectromotriu).
 - **`Soroll de procés`**: pertorbació gaussiana afegida directament a la força que rep la planta, que modela les incerteses del model físic.
 - **`Inverted Pendulum System`**: planta no lineal que integra les equacions del moviment i proporciona els quatre estats reals $x$, $\theta$, $\dot{x}$ i $\dot{\theta}$.
-- **`Soroll de mesura`**: soroll gaussià afegit a les sortides de la planta, que modela el soroll dels sensors.
-- **`Kalman Filter`**: observador que rep l'entrada de control $u$ i les mesures sorolloses $y$, i estima el vector d'estat $\hat{x}$.
+- **`Soroll de mesura`**: soroll gaussià afegit únicament a les sortides de posició $x$ i angle $\theta$, que modela el soroll dels sensors. Les velocitats $\dot{x}$ i $\dot{\theta}$ no es mesuren ni s'envien al Filtre de Kalman.
+- **`Kalman Filter`**: observador que rep l'entrada de control $u$ i les dues mesures sorolloses $y = [x,\,\theta]^T$, i estima el vector d'estat complet $\hat{x} = [\hat{x},\,\hat{\theta},\,\hat{\dot{x}},\,\hat{\dot{\theta}}]^T$. Les matrius internes del bloc corresponen a $A_{kf} = A - LC$, $B_{kf} = [B,\; L]$, $C_{kf} = I_4$, $D_{kf} = 0$.
 - Finalment, blocs de comparació que permeten visualitzar simultàniament l'estat real i l'estat estimat per a cadascuna de les quatre variables.
-
-Les condicions inicials del sistema per a la simulació han estat $x_0 = [0.2,\; \pi - 0.1\pi,\; 0,\; 0]^T$, coincidint amb les emprades a les seccions anteriors.
 
 ### 5.4 Resultats de la simulació
 
@@ -1759,40 +1767,40 @@ La resposta de la simulació es presenta en quatre figures independents, una per
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/kalman_1.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la posició del carro" style="width: 100%; height: auto; display: block;">
+    <img src="./images/kalman1.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la posició del carro" style="width: 100%; height: auto; display: block;">
     <div class="caption">Figura 14: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la posició del carro x.</div>
   </div>
 </div>
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/kalman_2.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a l'angle del pèndol" style="width: 100%; height: auto; display: block;">
+    <img src="./images/kalman2.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a l'angle del pèndol" style="width: 100%; height: auto; display: block;">
     <div class="caption">Figura 15: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a l'angle del pèndol θ.</div>
   </div>
 </div>
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/kalman_3.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la velocitat del carro" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura 16: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat del carro ẋ.</div>
+    <img src="./images/kalman3.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la velocitat del carro" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 16: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat del carro ẋ.</div>
   </div>
 </div>
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/kalman_4.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la velocitat angular del pèndol" style="width: 100%; height: auto; display: block;">
+    <img src="./images/kalman4.png" alt="Comparació entre l'estat real i l'estimació del Filtre de Kalman per a la velocitat angular del pèndol" style="width: 100%; height: auto; display: block;">
     <div class="caption">Figura 17: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per a la velocitat angular del pèndol.</div>
   </div>
 </div>
 
-S'observa que, en tots quatre estats, l'estimació del Filtre de Kalman segueix amb bona fidelitat la trajectòria real del sistema, tot i que el llaç no té controlador i, per tant, la resposta és en llaç obert i divergent. En detall:
+S'observa que, en tots quatre estats, l'estimació del Filtre de Kalman segueix amb bona fidelitat la trajectòria real del sistema, tot i que el llaç no té controlador i, per tant, la resposta és en llaç obert i divergent. Cal destacar que $\dot{x}$ i $\dot{\theta}$ s'obtenen exclusivament per estimació, sense cap mesura directa, cosa que fa aquest resultat especialment rellevant. En detall:
 
-- **Posició del carro $x$**: l'estimació (blava) superposa gairebé perfectament el valor real (vermell). El carro deriva de manera creixent en absència de control, cosa esperada en llaç obert.
-- **Angle del pèndol $\theta$**: les dues corbes presenten una discrepància inicial durant els primers instants, deguda al transitori de convergència de l'estimador. A partir d'aproximadament $t = 4\,\text{s}$ la diferència es redueix considerablement i les corbes convergeixen i s'apropen a $0$. Les oscil·lacions de gran amplitud dels primers segons reflecteixen la inestabilitat natural del pèndol sense control actiu.
-- **Velocitat del carro $\dot{x}$**: l'estimació segueix amb notable fidelitat la trajectòria real un cop superat el transitori inicial. El soroll de mesura és visible a la corba real.
-- **Velocitat angular $\dot{\theta}$**: paral·lelament a $\theta$, a partir de $t \approx 4\,\text{s}$ l'estimació convergeix correctament al valor real.
+- **Posició del carro $x$**: l'estimació (blava) superposa gairebé perfectament el valor real (vermell). Atès que $x$ és una de les dues variables mesurades directament, el filtre la segueix amb molt poc error. El carro deriva de manera creixent en absència de control, cosa esperada en llaç obert.
+- **Angle del pèndol $\theta$**: de manera similar a $x$, $\theta$ es mesura directament, i l'estimació s'hi ajusta amb molt bona precisió. Les oscil·lacions de gran amplitud dels primers segons reflecteixen la inestabilitat natural del pèndol sense control actiu. A partir d'aproximadament $t = 4\,\text{s}$ les corbes convergeixen i s'apropen a $0°$.
+- **Velocitat del carro $\dot{x}$**: aquesta variable no es mesura, i el filtre la dedueix a partir de la dinàmica del model i de les mesures de $x$ i $\theta$. L'estimació segueix amb notable fidelitat la trajectòria real un cop superat el transitori inicial d'aproximadament $0.5\,\text{s}$, validant la capacitat de reconstrucció de l'observador.
+- **Velocitat angular $\dot{\theta}$**: tampoc es mesura directament, i és la variable més difícil d'estimar per la seva alta sensibilitat a la inestabilitat del pèndol. S'observa un transitori inicial més pronunciat que en les altres variables, consistent amb el valor elevat del terme $L_{42} = 95.84$. A partir de $t \approx 4\,\text{s}$ l'estimació convergeix correctament al valor real.
 
-En conjunt, els resultats confirmen que el Filtre de Kalman dissenyat és capaç d'estimar l'estat del pèndol invertit en presència de soroll tant de procés com de mesura. El transitori inicial s'explica per la diferència entre les condicions inicials reals del sistema ($x_0 \neq 0$) i les condicions inicials de l'estimador, que s'inicialitza a zero. Un cop transcorregut aquest transitori, l'estimador s'adapta a la trajectòria real i la segueix amb un error reduït. Aquesta base permetrà, a l'apartat següent, combinar l'estimador amb el controlador LQR per obtenir el controlador LQG complet.
+En conjunt, els resultats confirmen que el Filtre de Kalman dissenyat és capaç d'estimar l'estat complet del pèndol invertit a partir de només dues mesures i en presència de soroll tant de procés com de mesura. El transitori inicial s'explica per la diferència entre les condicions inicials reals del sistema ($x_0 \neq 0$) i les condicions inicials de l'estimador, que s'inicialitza a zero. Un cop transcorregut aquest transitori, l'estimador s'adapta a la trajectòria real i la segueix amb un error reduït. Aquesta base permetrà, a l'apartat següent, combinar l'estimador amb el controlador LQR per obtenir el controlador LQG complet.
 
 <div class="page-break"></div>
 
@@ -1800,7 +1808,7 @@ En conjunt, els resultats confirmen que el Filtre de Kalman dissenyat és capaç
 
 ### 6.1 Introducció al controlador LQG
 
-El Regulador Quadràtic Lineal Gaussià (LQG) és el resultat de combinar els dos blocs dissenyats als apartats anteriors: el controlador LQR i el Filtre de Kalman. Fins ara, el controlador LQR s'ha aplicat assumint que tots els estats del sistema eren directament disponibles. En la pràctica, però, els sensors no mesuren tots els estats, o ho fan amb soroll de manera que el controlador no pot basar-se en el vector d'estat real $x$, sinó en una estimació $\hat{x}$ proporcionada per l'estimador.
+El Regulador Quadràtic Lineal Gaussià (LQG) és el resultat de combinar els dos blocs dissenyats als apartats anteriors: el controlador LQR i el Filtre de Kalman. Fins ara, el controlador LQR s'havia aplicat assumint que tots els estats del sistema eren directament disponibles. En la pràctica, però, els sensors només mesuren la posició del carro $x$ i l'angle del pèndol $\theta$, i ho fan amb soroll. Per tant, el controlador no pot basar-se en el vector d'estat real $x$, sinó en una estimació $\hat{x}$ proporcionada per l'estimador.
 
 El controlador LQG resol precisament aquest problema: aplica la llei de control òptima del LQR sobre els estats estimats pel Filtre de Kalman. La llei de control resultant és:
 
@@ -1841,7 +1849,7 @@ $$
 \begin{bmatrix} x \\ e \end{bmatrix}
 $$
 
-La matriu del sistema en llaç tancat és triangular per blocs, de manera que els seus valors propis són precisament la unió dels valors propis de $A - BK$ (valors propis del controlador LQR) i els de $A - LC$ (valors propis de l'estimador de Kalman). Aquesta estructura confirma que ambdós conjunts de valors propis es poden dissenyar de forma independent sense interferir-se mútuament. En el nostre cas, els valors propis del controlador i de l'estimador ja han estat verificats a les seccions 4 i 5, respectivament.
+La matriu del sistema en llaç tancat és triangular per blocs, de manera que els seus valors propis són precisament la unió dels valors propis de $A - BK$ (valors propis del controlador LQR) i els de $A - LC$ (valors propis de l'estimador de Kalman). Aquesta estructura confirma que ambdós conjunts de valors propis es poden dissenyar de forma independent sense interferir-se mútuament. En el nostre cas, els valors propis del controlador i de l'estimador ja han estat verificats a les seccions 4 i 5, respectivament, i tots ells tenen part real negativa.
 
 ### 6.3 Implementació a MATLAB i Simulink
 
@@ -1849,45 +1857,69 @@ A MATLAB, els guanys necessaris s'obtenen de manera directa a partir dels result
 
 ```matlab
 % Guany del controlador LQR
-K = lqr(A, B, Q, R);
+KK = lqr(A, B, Q, R_lqr);
+% KK = [-154.92   247.50   -94.36   26.92]
 
 % Guany del Filtre de Kalman (sistema dual)
 L = lqr(A', C', Vd, Vn)';
+% L (4x2): primera columna correcció per x, segona per θ
 
-% Matriu del sistema en bucle tancat (verificació)
-eig(A - B*K)    % valors propis del controlador
-eig(A - L*C)    % valors propis de l'estimador
+% Verificació de valors propis
+eig(A - B*KK)   % controlador LQR
+eig(A - L*C)    % estimador Kalman
 ```
 
-La implementació a Simulink del controlador LQG combina el diagrama del Filtre de Kalman de la secció 5 amb el guany LQR. La planta no lineal rep la força de control generada pel subsistema `Voltage_to_Force`. Les sortides sorolloses de la planta s'introdueixen al bloc del Filtre de Kalman, que reconstrueix l'estimació $\hat{x}$. Finalment, l'estimació es multiplica pel guany $K$ per generar la comanda de control en llaç tancat.
+La implementació a Simulink combina el diagrama del Filtre de Kalman de la secció 5 amb el guany LQR. La planta no lineal rep la força de control generada pel subsistema `Voltage_to_Force`. Les mesures parcials i sorolloses s'introdueixen al bloc del Filtre de Kalman, que reconstrueix l'estimació $\hat{x}$ completa. Finalment, l'estimació es multiplica pel guany $K$ per generar la comanda de control en llaç tancat.
 
 El diagrama complet del controlador LQG implementat a Simulink es mostra a la figura següent:
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/model_lqg.jpg" alt="Model LQG">
-    <div class="caption">Figura 20: Diagrama Simulink del controlador LQG. La planta no lineal rep la força de control generada a partir de l'estimació d'estat multiplicada pel guany LQR. El bloc del Filtre de Kalman reconstrueix els quatre estats a partir de les mesures sorolloses.</div>
+    <img src="./images/model_lqg.jpg" alt="Model LQG Simulink" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 20: Diagrama Simulink del controlador LQG. Les mesures de posició i angle es desplacen restant el punt d'equilibri <code>[0 pi]</code> abans d'entrar al Filtre de Kalman, i l'estimació es desplaça de nou sumant <code>[0 pi 0 0]</code> a la sortida. La llei de control LQR s'aplica sobre la diferència entre l'estimació recuperada i l'estat desitjat <code>Desire_state</code>.</div>
   </div>
 </div>
-
-Les condicions inicials emprades per a la simulació coincideixen amb les de les seccions anteriors: $x_0 = [0.2,\; \pi - 0.1\pi,\; 0,\; 0]^T$ i l'estimador s'inicialitza a $\hat{x}_0 = \mathbf{0}$.
 
 ### 6.4 Resultats de la simulació
 
+La resposta del controlador LQG es presenta en quatre figures independents, una per a cada estat del sistema. En totes elles es mostra en vermell el valor real i en blau l'estimació del Filtre de Kalman, el que permet avaluar simultàniament el rendiment de l'estimador i del controlador.
+
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/output_lqg.png" alt="Model LQG">
-    <div class="caption">Figura 21: Resposta del controlador LQG.</div>
+    <img src="./images/lqg1.png" alt="LQG: posició del carro" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 21: Resposta del controlador LQG per a la posició del carro x. El valor real (vermell) i l'estimació (blau) convergeixen a zero.</div>
   </div>
 </div>
 
-A diferència del Filtre de Kalman en llaç obert (secció 5), on la trajectòria del pèndol divergia en absència de control, el controlador LQG estabilitza activament el sistema. 
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/lqg2.png" alt="LQG: angle del pèndol" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 22: Resposta del controlador LQG per a l'angle del pèndol θ. El sistema s'estabilitza al voltant de 180°.</div>
+  </div>
+</div>
 
-Gràcies al guany LQR aplicat sobre l'estimació, la força de control generada és capaç de mantenir el pèndol a la posició vertical ($\theta = \pi$) i el carro al voltant de la posició de referència, tot i que les mesures estan clarament contaminades per soroll. Pel que fa a la velocitat del carro $\dot{x}$ i velocitat angular $\dot{\theta}$, ambdues variables convergeixen a zero, cosa que confirma que el sistema assoleix un punt d'equilibri estable.
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/lqg3.png" alt="LQG: velocitat del carro" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 23: Resposta del controlador LQG per a la velocitat del carro ẋ. La velocitat convergeix a zero tot i no ser mesurada directament pels sensors.</div>
+  </div>
+</div>
 
-La diferència fonamental entre el controlador LQR (secció 4) i el LQG és el fet que el primer assumeix que tots els estats són directament mesurables i lliures de soroll, mentre que el segon treballa exclusivament amb estimacions.
+<div class="image-row">
+  <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
+    <img src="./images/lqg4.png" alt="LQG: velocitat angular del pèndol" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 24: Resposta del controlador LQG per a la velocitat angular del pèndol θ̇. La velocitat angular convergeix ràpidament a zero.</div>
+  </div>
+</div>
 
-En conjunt, el controlador LQG representa el disseny de control complet per al pèndol invertit, amb l'optimalitat del LQR i la gestió del soroll del Filtre de Kalman. Tal com s'observa als resultats, el sistema és capaç d'estabilitzar el pèndol.
+A diferència del Filtre de Kalman en llaç obert (secció 5), on la trajectòria del pèndol divergia en absència de control actiu, el controlador LQG estabilitza el sistema en tots quatre estats. En detall:
+
+- **Posició del carro $x$**: el carro oscil·la inicialment i convergeix a la posició de referència $x = 0$ en un temps d'aproximadament $2{-}3\,\text{s}$. L'estimació segueix el valor real amb molt bona fidelitat des del primer instant, ja que $x$ és una variable directament mesurada.
+- **Angle del pèndol $\theta$**: la simulació inicia a $162°$ i s'estabilitza ràpidament al voltant de $180°$ (posició vertical). La discrepància inicial entre el valor real i l'estimat és petita i desapareix en menys d'un segon, consistent amb la velocitat dels valors propis de l'estimador. A partir d'aquí, ambdues corbes oscil·len lleugerament al voltant de $180°$ degut al soroll present al sistema.
+- **Velocitat del carro $\dot{x}$**: tot i no ser mesurada directament, el Filtre de Kalman la reconstrueix amb precisió. Partint d'un pic inicial, la velocitat convergeix a zero en menys d'$1\,\text{s}$ i es manté al voltant de zero amb oscil·lacions menors degudes al soroll de mesura.
+- **Velocitat angular $\dot{\theta}$**: presenta el pic inicial més elevat com a conseqüència de la condició inicial de l'angle, però convergeix ràpidament a zero en el primer segon. La corba estimada (blava) s'ajusta correctament al valor real (vermell).
+
+En conjunt, els resultats confirmen que el controlador LQG és capaç d'estabilitzar el pèndol invertit en presència de soroll tant de procés com de mesura, i tot i disposar únicament de mesures parcials del sistema ($x$ i $\theta$). La diferència fonamental respecte al controlador LQR de la secció 4 és que el LQG no necessita accés directe als estats reals. Pot operar exclusivament sobre les estimacions del Filtre de Kalman i obté un rendiment equivalent. Això el converteix en el disseny de control complet i més realista per al pèndol invertit.
 
 <div class="page-break"></div>
 
@@ -2063,17 +2095,15 @@ Des d’un punt de vista industrial, aquest resultat és important perquè molts
 
 ### 7.2 Segona extensió
 
-Treballem amb el mateix sistema de pèndol invertit de les seccions anteriors, però ara
-considerem diverses situacions físiques reals que es podrien donar en funció de la qualitat
-dels sensors i del grau de coneixement del model dinàmic. En la pràctica, un mateix sistema
-pot estar equipat amb sensors de precisió alta o baixa, o bé el model matemàtic pot ser més
-o menys fidel al comportament real Aquesta extensió explora com afecten aquestes circumstàncies al rendiment de l'estimador.
+Treballem amb el mateix sistema de pèndol invertit de les seccions anteriors, però ara considerem diverses situacions físiques reals que es podrien donar en funció de la qualitat dels sensors i del grau de coneixement del model dinàmic. En la pràctica, un mateix sistema pot estar equipat amb sensors de precisió alta o baixa, o bé el model matemàtic pot ser més o menys fidel al comportament real. Aquesta extensió explora com afecten aquestes circumstàncies al rendiment de l'estimador.
 
-El disseny del Filtre de Kalman requereix especificar dues matrius de covariança: $Q_N$, que representa la incertesa del model (soroll de procés), i $R_N$, que representa la incertesa dels sensors (soroll de mesura). En la secció 5 s'ha treballat amb el cas base $Q_N = R_N = 0.001 \cdot I_4$, que assumeix una confiança equivalent entre el model i els sensors. Tanmateix, en aplicacions reals, la relació entre $Q_N$ i $R_N$ rarament és simètrica: els sensors poden estar molt sorollosos, el model pot tenir incerteses importants, o bé ambdues coses alhora.
+El disseny del Filtre de Kalman requereix especificar dues matrius de covariança: $Q_N$, que representa la incertesa del model (soroll de procés), i $R_N$, que representa la incertesa dels sensors (soroll de mesura). En la secció 5 s'ha treballat amb el cas base $Q_N = 0.001 \cdot I_4$ i $R_N = 0.001 \cdot I_2$, que assumeix una confiança equivalent entre el model i els sensors. Tanmateix, la relació entre $Q_N$ i $R_N$ rarament és simètrica a la realitat. Els sensors poden ser molt sorollosos, el model pot tenir incerteses importants, o bé ambdues coses alhora.
 
 L'objectiu d'aquesta extensió és estudiar com afecta la variació del quocient $Q_N / R_N$ al comportament de l'estimador. Recordem que el guany de Kalman $L$ s'obté resolent l'equació algebraica de Riccati dual:
 
-$$A P_e + P_e A^T + G Q_N G^T - P_e C^T R_N^{-1} C P_e = 0 \qquad \Rightarrow \qquad L = P_e C^T R_N^{-1}$$
+$$
+A P_e + P_e A^T + G Q_N G^T - P_e C^T R_N^{-1} C P_e = 0 \qquad \Rightarrow \qquad L = P_e C^T R_N^{-1}
+$$
 
 Per tant, un quocient $Q_N / R_N$ elevat produeix un guany $L$ gran i valors propis ràpids de l'observador, mentre que un quocient baix produeix un guany $L$ petit i valors propis lents. La interpretació física és:
 
@@ -2086,13 +2116,13 @@ La taula següent recull la configuració dels cinc casos simulats:
 
 <div class="table-container">
   <div class="table-title">Casos simulats per a l'anàlisi de sensibilitat del Filtre de Kalman</div>
-  <table style="width: 650px; table-layout: fixed;">
+  <table style="width: 680px; table-layout: fixed;">
     <colgroup>
-      <col style="width: 50px;">
-      <col style="width: 100px;">
-      <col style="width: 100px;">
-      <col style="width: 100px;">
-      <col style="width: 300px;">
+      <col style="width: 55px;">
+      <col style="width: 120px;">
+      <col style="width: 120px;">
+      <col style="width: 90px;">
+      <col style="width: 295px;">
     </colgroup>
     <thead>
       <tr>
@@ -2107,35 +2137,35 @@ La taula següent recull la configuració dels cinc casos simulats:
       <tr>
         <td>1 (base)</td>
         <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
-        <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
+        <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>2</mn></msub></math></td>
         <td>1</td>
         <td>Confiança equilibrada entre model i sensors</td>
       </tr>
       <tr>
         <td>2</td>
         <td><math><mn>0.1</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
-        <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
+        <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>2</mn></msub></math></td>
         <td>100</td>
         <td>Model incert, l'estimador segueix els sensors</td>
       </tr>
       <tr>
         <td>3</td>
         <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
-        <td><math><mn>0.1</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
+        <td><math><mn>0.1</mn><mo>·</mo><msub><mi>I</mi><mn>2</mn></msub></math></td>
         <td>0.01</td>
         <td>Sensors sorollosos, l'estimador confia en el model</td>
       </tr>
       <tr>
         <td>4</td>
         <td><math><mn>10</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
-        <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
+        <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>2</mn></msub></math></td>
         <td>10 000</td>
         <td>Model molt incert, seguiment agressiu dels sensors</td>
       </tr>
       <tr>
         <td>5</td>
         <td><math><mn>0.001</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
-        <td><math><mn>10</mn><mo>·</mo><msub><mi>I</mi><mn>4</mn></msub></math></td>
+        <td><math><mn>10</mn><mo>·</mo><msub><mi>I</mi><mn>2</mn></msub></math></td>
         <td>0.0001</td>
         <td>Sensors molt sorollosos, estimador quasi autònom</td>
       </tr>
@@ -2144,113 +2174,148 @@ La taula següent recull la configuració dels cinc casos simulats:
   <div class="table-caption">Taula 6: Casos simulats per a l'anàlisi de sensibilitat del Filtre de Kalman, amb les matrius de covariança emprades i el quocient resultant.</div>
 </div>
 
-Abans de passar a la simulació, interpretem el guany $L$ i els valors propis obtinguts per cada cas. 
+Abans de passar a la simulació, interpretem el guany $L$ i els valors propis obtinguts per cada cas. Recordem que la velocitat de convergència de l'estimador depèn dels valors propis de la matriu $A - LC$: com més negatius siguin, més ràpid decau l'error. El valor propi dominant, és a dir, el menys negatiu, és el que marca la velocitat global de convergència a través de la constant de temps $\tau = -1/\lambda_{\text{dom}}$.
 
-Recordem que la velocitat de convergència de l'estimador depèn dels valors propis de la matriu $A - LC$. A més, el guany $L$ determina amb quina agressivitat es corregeix cada estat quan la mesura divergeix de la predicció del model. Els valors propis de $A - LC$ determinen els modes de convergència de l'error d'estimació, com més negatius siguin, més ràpid decau l'error. Per tant, el valor propi dominant, és a dir, el menys negatiu, és el que marca la velocitat global de convergència a través de la constant de temps $\tau = -1/\lambda_{\min}$. 
+Per al **cas 1 (base)**, el guany obtingut és la matriu $L$ de la secció 5:
 
-Per al **cas 1 (base, secció 5)**, el guany és:
+$$
+    L =
+    \begin{bmatrix}
+    1.0132 &  0.3749 \\
+    0.3749 & 13.8761 \\
+    0.0836 &  3.0135 \\
+    2.5692 & 95.8435
+    \end{bmatrix}
+$$
 
-$$L_1 = \begin{bmatrix} 1.0035 & 0.0143 & 0.0053 & 0.0579 \\ 0.0143 & 0.4472 & 0.0988 & 2.3379 \\ 0.0053 & 0.0988 & 0.0510 & 0.4500 \\ 0.0579 & 2.3379 & 0.4500 & 15.1112 \end{bmatrix}$$
+amb valors propis $\lambda(A - L_1 C) = \{-19.64,\; -1.00,\; -7.01,\; -5.55\}$. El valor propi dominant és $-1.00$, que implica una constant de temps $\tau \approx 1\,\text{s}$. Les columnes de $L_1$ associades a $\theta$ presenten valors notablement superiors a les de $x$, consistent amb la inestabilitat angular del pèndol.
 
-amb valors propis $\lambda(A - L_1 C) = \{-1.00, \, -18.99, \, -7.53 \pm 0.92j\}$. S'observa que les columnes 2 i 4 de $L_1$ (associades a $\theta$ i $\dot{\theta}$) presenten valors notablement superiors a les columnes de $x$ i $\dot{x}$, la qual cosa és consistent amb el fet que l'angle és l'estat més inestable i crític del sistema. El valor propi dominant és $-1.00$ que implica una constant de temps $\tau \approx 1$ s.
+Per al **cas 2** ($Q_N / R_N = 100$), el guany augmenta considerablement:
 
-Per al **cas 2** ($Q_N / R_N = 100$), el guany puja notablement:
+$$
+L_2 =
+\begin{bmatrix}
+10.0124 &  0.0972 \\
+ 0.0972 & 18.1312 \\
+ 0.1283 &  3.0489 \\
+-0.3142 & 114.3754
+\end{bmatrix}
+$$
 
-$$L_2 = \begin{bmatrix} 10.009 & 0.116 & 0.103 & -0.059 \\ 0.116 & 6.855 & 1.709 & 8.147 \\ 0.103 & 1.709 & 2.872 & -1.423 \\ -0.059 & 8.147 & -1.423 & 36.207 \end{bmatrix}$$
+amb valors propis $\{-4.77,\; -11.29,\; -10.09,\; -20.32\}$. El valor propi dominant passa a $-4.77$ ($\tau \approx 0.21\,\text{s}$), més de quatre vegades més ràpid que el cas base. L'aparició de l'element negatiu $L_{41} = -0.31$, que indica que davant d'una discrepància en la mesura de $x$, la correcció òptima de $\dot{\theta}$ va en sentit contrari per l'acoblament mecànic entre el carro i el pèndol. El filtre és ràpid però arrossega el soroll de mesura a l'estimació.
 
-amb valors propis $\{-10.04, \, -12.43, \, -25.95 \pm 19.15j\}$. Tots els elements de $L_2$ creixen en un ordre de magnitud respecte a $L_1$. Destaca l'aparició de valors negatius a la matriu indicant que, davant d'una discrepància entre la mesura i la predicció d'un estat, la correcció òptima d'un altre estat va en sentit contrari. Això és conseqüència directa de l'acoblament físic del sistema: si $\dot{\theta}$ és més gran de l'esperat, la dinàmica del pèndol implica que $\dot{x}$ hauria de ser menor, perquè carro i pèndol estan lligats mecànicament. El valor propi dominant passa a $-10.04$ ($\tau \approx 0.1$ s), deu vegades més ràpid que el cas base.
+Per al **cas 3** ($Q_N / R_N = 0.01$), el guany es redueix a la primera columna:
 
-Per al **cas 3** ($Q_N / R_N = 0.01$), el guany es redueix:
+$$
+L_3 =
+\begin{bmatrix}
+0.1136 &  0.4284 \\
+0.4284 & 13.8189 \\
+0.0932 &  3.0062 \\
+2.9624 & 95.5678
+\end{bmatrix}
+$$
 
-$$L_3 = \begin{bmatrix} 0.101 & 0.009 & 0.002 & 0.061 \\ 0.009 & 0.285 & 0.062 & 1.962 \\ 0.002 & 0.062 & 0.014 & 0.427 \\ 0.061 & 1.962 & 0.427 & 13.556 \end{bmatrix}$$
+amb valors propis $\{-0.10,\; -6.92,\; -19.64,\; -5.60\}$. El valor propi dominant a $-0.10$ ($\tau \approx 10\,\text{s}$) indica una convergència deu vegades més lenta que el cas base. L'element $L_{11} = 0.11$ és significativament menor que al cas base ($1.01$), cosa que significa que el filtre pràcticament ignora l'error de mesura de $x$ quan els sensors es considera que són sorollosos. En canvi, els elements de la columna 2 (associada a $\theta$) es mantenen gairebé inalterats, lo qual indica que el filtre no pot renunciar a seguir l'angle encara que els sensors siguin sorollosos.
 
-amb valors propis $\{-0.10, \, -19.74, \, -6.91, \, -5.64\}$, tots reals. L'estructura és similar a $L_1$ però escalada cap avall. El valor propi dominant a $-0.10$ ($\tau \approx 10$ s) indica una convergència molt més lenta.
+Per al **cas 4** ($Q_N / R_N = 10\,000$), el guany és molt agressiu:
 
-Per al **cas 4** ($Q_N / R_N = 10\,000$), el guany té els valors més grans:
+$$
+L_4 =
+\begin{bmatrix}
+100.0229 &  -0.0687 \\
+ -0.0687 & 104.5348 \\
+  2.2949 &  -3.0537 \\
+-10.9914 & 463.7618
+\end{bmatrix}
+$$
 
-$$L_4 = \begin{bmatrix} 100.00 & 0.045 & 0.378 & -0.193 \\ 0.045 & 96.33 & 6.221 & 27.143 \\ 0.378 & 6.221 & 80.056 & -25.965 \\ -0.193 & 27.143 & -25.965 & 127.129 \end{bmatrix}$$
-
-amb valors propis $\{-110.83 \pm 45.58j, \, -100.14 \pm 0.28j\}$. La diagonal de $L_4$ presenta valors entre 80 i 127, la qual cosa indica que el filtre aplica correccions molt grans a cada mesura. El filtre considera el model tan poc fiable que, davant de
-qualsevol discrepància entre mesura i predicció, corregeix l'estat de manera molt agressiva
-i confia molt en el sensor. La presència de valors negatius significatius fora de la diagonal (com $-25.96$) implica un acoblament rellevant entre les dinàmiques de $\dot{x}$ i $\dot{\theta}$.
+amb valors propis $\{-4.48,\; -17.76,\; -99.99,\; -100.65\}$. La diagonal de $L_4$ presenta valors de fins a 464, la qual cosa significa que qualsevol petita discrepància entre mesura i predicció es tradueix en una correcció agressiva. La presència de valors negatius significatius (com $L_{31} = 2.29$ i $L_{41} = -10.99$) reflecteix un acoblament fort entre els estats a causa de la confiança quasi nul·la en el model. Com es veurà als resultats, aquesta agressivitat amplifica el soroll en lloc de filtrar-lo.
 
 Per al **cas 5** ($Q_N / R_N = 0.0001$), el guany és:
 
-$$L_5 = \begin{bmatrix} 0.010 & 0.009 & 0.002 & 0.062 \\ 0.009 & 0.283 & 0.062 & 1.957 \\ 0.002 & 0.062 & 0.013 & 0.427 \\ 0.062 & 1.957 & 0.427 & 13.537 \end{bmatrix}$$
+$$
+L_5 =
+\begin{bmatrix}
+0.0237 &  0.4340 \\
+0.4340 & 13.8180 \\
+0.0944 &  3.0061 \\
+3.0017 & 95.5630
+\end{bmatrix}
+$$
 
-amb valors propis $\{-0.01, \, -6.92, \, -19.75, \, -5.60\}$. Numèricament, $L_5$ és gairebé idèntic a $L_3$ en totes les posicions excepte en $L_{1,1}$, que cau de $0.101$ a $0.010$. Aquest és el valor que determina com es corregeix l'estimació de $x$ a partir
-de la mesura de $x$. Per tant, assumint que els sensors són molt sorollosos, el filtre pràcticament ignora la mesura de posició del carro. A més, $x$ és el único estat sense dinàmica inestable associada (el seu valor propi en llaç obert és zero), de manera que un error en la seva estimació no creix ni s'accelera per si sol. En canvi, $\theta$ i $\dot{\theta}$ estan directament lligats al mode inestable del sistema, de manera que el filtre no pot pot ignorar les mesures ni quan els sensors són molt sorollosos. El valor propi dominant a $-0.01$ ($\tau \approx 100$ s) confirma que l'estimador és quasi autònom.
+amb valors propis $\{-0.010,\; -6.916,\; -19.637,\; -5.600\}$. Numèricament, $L_5$ és molt similar a $L_3$ excepte en $L_{11}$, que cau de $0.114$ a $0.024$: el filtre quasi ignora la mesura de posició del carro. El pol dominant a $-0.01$ ($\tau \approx 100\,\text{s}$) fa que l'estimador sigui pràcticament autònom durant tota la simulació.
 
 #### 7.2.2 Resultats
 
-**Cas 1: cas base ($Q_N = R_N = 0.001 \cdot I_4$)**
+En totes les figures que segueixen es mostren tres corbes: **vermell** per a l'estat real, **blau** per a l'estimació del Filtre de Kalman, i **verd** per a la mesura sorollosa disponible als sensors (només per als estats $x$ i $\theta$, que són els mesurats).
+
+**Cas 1: cas base ($Q_N = R_N = 0.001$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA1.png" alt="Resposta del sistema Cas A1 (base)" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura 35: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas base amb Q_N = R_N = 0.001 · I_4.</div>
+    <img src="./images/ext2_cas1.png" alt="Resposta del sistema Cas 1 (base)" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 35: Cas 1 (base). Estat real (vermell), estimació Kalman (blau) i mesura sorollosa (verd) per als quatre estats. Q_N = R_N = 0.001.</div>
   </div>
 </div>
 
-El cas base reprodueix els resultats i la interpretació de la secció 5.
+El cas base mostra el comportament esperat: l'estimació segueix molt de prop el valor real tant per a $x$ com per a $\theta$, amb el verd (mesura sorollosa) oscil·lant al voltant de la corba real. Per a $\dot{x}$ i $\dot{\theta}$, que no es mesuren directament, l'estimació (blava) reconstrueix amb bona fidelitat la dinàmica real (vermella) un cop superat el breu transitori inicial. La posició del carro creix de manera creixent en llaç obert, però l'estimació la segueix de manera gairebé perfecta al llarg de tota la simulació.
 
 **Cas 2: model incert ($Q_N = 0.1 \cdot I_4$, $Q_N/R_N = 100$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA2.png" alt="Resposta del sistema Cas A2" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura 36: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 2 amb Q_N/R_N = 100.</div>
+    <img src="./images/ext2_cas2.png" alt="Resposta del sistema Cas 2" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 36: Cas 2 (model incert). Estat real (vermell), estimació Kalman (blau) i mesura sorollosa (verd). Q_N/R_N = 100.</div>
   </div>
 </div>
 
-Amb el valor propi dominant a $-10.04$ ($\tau \approx 0.1$ s), l'estimació de $\theta$ convergeix més ràpid que al cas base, les dues corbes ja coincideixen a partir de $t \approx 2$ s. La gràfica de $\dot{\theta}$ mostra un millor solapament des dels primers instants respecte al cas base. Tanmateix, aquesta major confiança en els sansors absorveix també més soroll. A la gràfica de $\dot{x}$, la corba real (vermella) presenta una dispersió de soroll de mesura clarament superior a la del cas base. Per tant, guanyem rapidesa de convergència a costa d'una estimació més sensible al soroll.
+Amb un pol dominant a $-4.77$ ($\tau \approx 0.21\,\text{s}$), l'estimació de $\theta$ és més reactiva que al cas base: les corbes vermella i blava coincideixen gairebé des de $t = 0$. Tanmateix, a les gràfiques de $\dot{x}$ i $\dot{\theta}$, les oscil·lacions de l'estimació (blava) són més grans que al cas base a causa del soroll que el filtre ara incorpora directament de les mesures.
 
-**Cas 3: sensors sorollosos ($R_N = 0.1 \cdot I_4$, $Q_N/R_N = 0.01$)**
+**Cas 3: sensors sorollosos ($R_N = 0.1 \cdot I_2$, $Q_N/R_N = 0.01$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA3.png" alt="Resposta del sistema Cas A3" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura 37: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 3 amb Q_N/R_N = 0.01.</div>
+    <img src="./images/ext2_cas3.png" alt="Resposta del sistema Cas 3" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 37: Cas 3 (sensors sorollosos). Estat real (vermell), estimació Kalman (blau) i mesura sorollosa (verd). Q_N/R_N = 0.01.</div>
   </div>
 </div>
 
-En assumir que els sensors són sorollosos ($R_N$ gran), el guany $L_3$ es redueix i l'estimador passa a confiar principalment en la predicció del model. A la gràfica de $x$: la corba vermella mostra un soroll considerable, mentre que l'estimació blava descriu una trajectòria molt suau que captura únicament la tendència de fons. El mateix s'observa per a $\dot{x}$, on el soroll de mesura és molt visible al senyal real i l'estimació el filtra de manera notable. La gràfica de $\dot{\theta}$, en canvi, mostra que l'estimador segueix correctament la dinàmica angular malgrat la menor reactivitat, gràcies al fet que els elements de la columna 4 de $L_3$ (associats a $\dot{\theta}$) conserven valors relativament elevats ($13.56$). El pol dominant a $-0.10$ introdueix un transitori lent, però en conjunt l'estimació és robusta al soroll de mesura.
+La mesura sorollosa (verda) de $x$ mostra variacions brusques molt destacades, i el filtre les ignorara en bona mesura. L'estimació (blava) descriu una trajectòria molt més suau que segueix la tendència de fons sense copiar el soroll. El mateix efecte s'observa a $\theta$, on la corba blava és molt més neta que la verda. A $\dot{x}$, l'estimació és quasi indistingible del valor real durant gran part de la simulació. D'altra banda, el filtre convergeix més lentament, com evidencia la major separació inicial entre vermell i blau a $\theta$ durant els primers dos o tres segons.
 
 **Cas 4: model molt incert ($Q_N = 10 \cdot I_4$, $Q_N/R_N = 10\,000$)**
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA4.png" alt="Resposta del sistema  Cas A4" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura 38: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 4 amb Q_N/R_N = 10\,000.</div>
+    <img src="./images/ext2_cas4.png" alt="Resposta del sistema Cas 4" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 38: Cas 4 (model molt incert). Estat real (vermell), estimació Kalman (blau) i mesura sorollosa (verd). Q_N/R_N = 10 000.</div>
   </div>
 </div>
 
-Amb valors propis a $-100 \pm 0.28j$ i $-111 \pm 46j$, l'estimador és extremadament ràpid i reacciona a cada variació del senyal de mesura de manera quasi instantània. El guany $L_4$ arriba a valors diagonals de fins a 127 i elements fora de la diagonal de fins a $-26$, la qual cosa significa que el filtre amplifica el soroll de mesura en lloc de filtrar-lo. Això es manifesta clarament a les gràfiques de $\dot{x}$ i $\dot{\theta}$, on ambdues corbes (real i estimada) oscil·len entre $\pm 3$ m/s i $\pm 1000$ °/s respectivament, sense cap tendència clara de convergència. Per tant, un $Q_N$ excessivament impedeix el filtratge i produeix un estimador inestable en la pràctica, malgrat que matemàticament tots els valors propis de $A - LC$ siguin estrictament negatius.
+En aquest quart cas, el guany $L_4$ és tan gran que el filtre amplifica qualsevol variació de la mesura en la seva estimació. A la gràfica de $\dot{x}$, la corba blava oscil·la entre $\pm 5\,\text{m/s}$ i es desvia progressivament del valor real. A $\dot{\theta}$, l'estimació (blava) creix sense control fins a $\pm 5000\,\text{°/s}$, molt per sobre del valor real (vermell), que es manté al voltant de zero. Per a $x$ i $\theta$, les corbes blava i verda pràcticament se superposen, confirmant que l'estimador segueix directament la mesura sorollosa en lloc de filtrar-la. Malgrat que matemàticament tots els valors propis de $A - L_4C$ son negatius, en la pràctica el filtre és inestable i amplifia el soroll de mesura, produint estimacions inútils per al control.
 
-<div class="page-break"></div>
+**Cas 5: sensors molt sorollosos ($R_N = 10 \cdot I_2$, $Q_N/R_N = 0.0001$)**
 
-**Cas 5: sensors molt sorollosos ($R_N = 10 \cdot I_4$, $Q_N/R_N = 0.0001$)**
+Aquest cas és l'extrem contrari al cas 4. La mesura sorollosa (verda) de $x$ oscil·la violentament entre $\pm 5\,\text{m}$, però l'estimació (blava) segueix la tendència real (vermella) de manera molt suau, ignorant quasi completament el soroll. Per a $\theta$, la mesura verda és igualment caòtica i l'estimació blava la suavitza de manera notable. Tot i el filtratge, el soroll dels sensors altera les estimacions de $\dot{x}$ i $\dot{\theta}$. El VAP dominant a $-0.01$ ($\tau \approx 100\,\text{s}$) confirma que el filtre és lent i no s'adapta a canvis ràpids, però és raonablement robust al soroll. Seria una configuració adequada només en el cas de sensors molt defectuosos, i sempre que la dinàmica del sistema canviï de manera suficientment lenta.
 
 <div class="image-row">
   <div class="image-column" style="width: 100%; max-width: 950px; margin: 0 auto;">
-    <img src="./images/ext2_casA5.png" alt="Resposta del sistema Cas A5" style="width: 100%; height: auto; display: block;">
-    <div class="caption">Figura 39: Comparació entre l'estat real (vermell) i l'estimació del Filtre de Kalman (blau) per als quatre estats. Cas 5 amb Q_N/R_N = 0.0001.</div>
+    <img src="./images/ext2_cas5.png" alt="Resposta del sistema Cas 5" style="width: 100%; height: auto; display: block;">
+    <div class="caption">Figura 39: Cas 5 (sensors molt sorollosos). Estat real (vermell), estimació Kalman (blau) i mesura sorollosa (verd). Q_N/R_N = 0.0001.</div>
   </div>
 </div>
-
-Aquest cas és l'extrem contrari, el filtre assumeix que els sensors són tan sorollosos que pràcticament ignora les mesures. Amb un pol dominant a $-0.01$ ($\tau = 100$ s), l'estimador convergeix en una escala temporal molt superior a la durada de la simulació. la corba real (vermella) de $x$ oscil·la violentament a causa del soroll de mesura extrem, mentre que l'estimació (blava) descriu una paràbola molt suau completament desacoblada de les mesures. Només per a $\dot{\theta}$, l'estimació captura la tendència general de la dinàmica angular però sense reaccionar al soroll real. Aquesta configuració seria adequada únicament si els sensors fossin extremadament defectuosos.
 
 #### 7.2.3 Conclusions de la segona extensió
 
 Aquesta extensió ha comprovat la importància del balanç entre les matrius de covariança $Q_N$ i $R_N$ en el disseny del Filtre de Kalman. Els resultats obtinguts permeten extreure les conclusions següents.
 
-En primer lloc, el quocient $Q_N / R_N$ determina directament la velocitat i el caràcter de l'estimació a través dels valors propis de $A - LC$. Un quocient elevat genera valors propis ràpids i un filtre reactium un quocient baix genera valors propis lents i un filtre suau. Cap dels dos extrems és òptim: el cas 4 mostra que una agressivitat excessiva que amplifica el soroll i afecta la estabilitat del sistema, i el cas 5 mostra que una suavitat extrema que allunya l'estimador de la realitat física.
+En primer lloc, el quocient $Q_N / R_N$ determina directament la velocitat i el caràcter de l'estimació a través dels valors propis de $A - LC$. Un quocient elevat genera valors propis ràpids i un filtre reactiu; un quocient baix genera valors propis lents i un filtre suau. Cap dels dos extrems és òptim: el cas 4 mostra que una agressivitat excessiva amplifica el soroll i produeix estimacions divergents en la pràctica, i el cas 5 mostra que una suavitat extrema allunya l'estimador de la realitat física quan hi ha canvis dinàmics ràpids.
 
-En segon lloc, l'estudi confirma que el cas base (cas 1) és un punt de disseny correcte per al sistema estudiat, amb un valor propi dominant a $-1.00$ que permet una convergència en un temps compatible amb la dinàmica del pèndol i un bon equilibri entre seguiment i filtratge.
+En segon lloc, l'estudi confirma que el cas base (cas 1) és un punt de disseny adequat per al sistema estudiat. Amb un valor propi dominant a $-1.00$ aconsegueix una convergència en un temps compatible amb la dinàmica del pèndol i un bon equilibri entre seguiment i filtratge del soroll.
 
-En tercer lloc, el cas 3 ($Q_N/R_N = 0.01$) és el que mostra millor capacitat de filtratge del soroll de mesura però amb una convergència inicial més lenta.
+En tercer lloc, el cas 3 ($Q_N/R_N = 0.01$) és el que mostra la millor capacitat de filtratge del soroll de mesura, amb una estimació molt neta però a costa d'una convergència inicial més lenta. En un entorn real amb sensors sorollosos però dinàmica relativament lenta, seria la configuració escollida.
 
-Finalment, l'anàlisi dels guanys $L$ de cada cas confirma que, independentment de la configuració de covariàncies, les columnes de $\theta$ i $\dot{\theta}$ de la matriu $L$ sempre presenten els valors dominants. Això és consistent amb el fet que l'angle del pèndol és l'estat més crític i inestable del sistema, i que qualsevol estimador ha de prioritzar la seva estimació precisa per garantir l'eficàcia del controlador LQG.
+Finalment, independentment de la configuració de covariàncies, els elements de $L$ associats a $\theta$ sempre presenten els valors dominants de la matriu. Això és consistent amb el fet que l'angle del pèndol és l'estat més crític i inestable del sistema. Per aquesta raó, l'estimador ha de prioritzar la seva estimació precisa per garantir l'eficàcia del controlador.
 
 <div class="page-break"></div>
 
@@ -2260,9 +2325,9 @@ En aquest treball s’ha desenvolupat un estudi complet del pèndol invertit sob
 
 A nivell de control, els resultats mostren clarament la diferència entre treballar sense realimentació i fer-ho amb tècniques de control adequades. El controlador PID ja permet estabilitzar el sistema amb un comportament correcte, però el regulador LQR aconsegueix una resposta més suau i més ben estructurada, amb menys oscil·lació inicial i amb una formulació més sistemàtica basada en l’optimització d’una funció de cost. Això confirma que, per a un sistema multivariable i inestable com el pèndol invertit, el control en espai d’estats ofereix una eina més potent i més natural que un ajust clàssic purament empíric.
 
-Pel que fa a l’estimació d’estat, el Filtre de Kalman ha demostrat ser capaç de reconstruir amb bona fidelitat les variables internes del sistema fins i tot en presència de soroll de procés i de mesura. Aquest resultat és especialment important perquè fa possible abandonar la hipòtesi ideal de mesurar directament tots els estats i apropar el model de control a una situació més realista. 
+Pel que fa a l'estimació d'estat, el Filtre de Kalman ha demostrat ser capaç de reconstruir amb bona fidelitat les quatre variables d'estat del sistema a partir de tan sols dues mesures, la posició del carro $x$ i l'angle del pèndol $\theta$, i tot i la presència de soroll de procés i de mesura. Les velocitats $\dot{x}$ i $\dot{\theta}$, que no es mesuren directament, es reconstrueixen íntegrament per estimació. Aquest resultat és especialment rellevant perquè fa possible abandonar la hipòtesi ideal de mesurar directament tots els estats i aproximar el model de control a una situació física molt més realista.
 
-La combinació del LQR amb el Filtre de Kalman ha permès construir un controlador LQG complet, que és el resultat principal del projecte. Les simulacions mostren que aquest esquema és capaç d’estabilitzar el pèndol invertit tot i treballar amb mesures contaminades per soroll, mantenint el pèndol a prop de la vertical i el carro al voltant de la referència. Per tant, el treball confirma en la pràctica el principi de separació: es pot dissenyar el controlador i l’estimador per separat i, un cop integrats, el comportament global continua sent satisfactori.
+La combinació del LQR amb el Filtre de Kalman ha permès construir un controlador LQG complet, que és el resultat principal del projecte. Les simulacions mostren que aquest esquema és capaç d'estabilitzar el pèndol invertit tot i treballar amb mesures parcials i contaminades per soroll, mantenint el pèndol a prop de la vertical i el carro al voltant de la referència. Per tant, el treball confirma en la pràctica el principi de separació: es pot dissenyar el controlador i l'estimador per separat i, un cop integrats, el comportament global continua sent satisfactori.
 
 Les dues extensions també aporten conclusions útils des del punt de vista físic i de disseny. En la primera s’ha vist que una fricció addicional moderada no destrueix l’estabilització i fins i tot pot reduir la demanda instantània de control, mentre que una fricció massa elevada porta el sistema a saturació si l’actuador no té prou marge. En la segona s’ha comprovat que el rendiment del Filtre de Kalman depèn fortament del balanç entre la covariança del soroll de procés i la del soroll de mesura: si el filtre es torna massa agressiu amplifica el soroll, i si es torna massa conservador deixa de seguir adequadament la dinàmica real. 
 
@@ -2275,3 +2340,5 @@ En conjunt, el projecte ha servit per entendre de manera aplicada i coherent tot
 <a name="bib1"></a> [1]: Singh, J. *A Short Notes on Inverted Pendulum: Model Based Control Design for Swing-up & Balance the Inverted Pendulum*. Sardar Vallabhbhai National Institute of Technology (SVNIT) i Indian Institute of Technology (IIT) Jodhpur. Disponible a: [Google Drive](https://drive.google.com/file/d/1W2v3wKXBVW4FohB33kTv8iBEiOFgoS8d/view)
 
 <a name="bib2"></a> [2]: Ganbold, A. (2023). *Design of a Linear Quadratic Gaussian Control System for a Thrust Vector Controlled Rocket*. San Jose State University (SJSU). Disponible a: [SJSU AE Docs](https://www.sjsu.edu/ae/docs/project-thesis/Alex.Ganbold-Su23.pdf)
+
+<a name="bib3"></a> [3]: Brunton, S. L., & Kutz, J. N. (2019). *Data-Driven Science and Engineering: Machine Learning, Dynamical Systems, and Control*. Cambridge University Press. Capítol 8: *Linear Control Theory*. Disponible a: [Cambridge University Press](https://www.cambridge.org/core/books/datadriven-science-and-engineering/77D52B171B60A496EAFE4DB662ADC36E) i [web del llibre](https://databookuw.com/)

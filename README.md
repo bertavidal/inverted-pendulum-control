@@ -16,7 +16,7 @@ Developed for the Optimization course, Bachelor's Degree in Artificial Intellige
 
 ## Repository structure
 
-- `models Simulink/` : Simulink models for each controller
+- `models/` : Simulink models for each controller
 - `scripts_matlab/` : MATLAB scripts: model parameters, LQR, Kalman and LQG design
 - `informe.pdf` : full project report (in Catalan), with derivations, results and conclusions
 - `Diapositives.pdf` : 5-slide presentation summary
